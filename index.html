@@ -144,6 +144,8 @@
   .card .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 2px; }
   .card .chips { display: flex; gap: 4px 10px; flex-wrap: wrap; }
   .card .chip { font-size: 10px; white-space: nowrap; }
+  .card.recent-head { cursor: default; border-left-color: var(--c-humans); background: #171f2b; }
+  .card.recent-head .txt { color: var(--ink); }
   .card .more { font: 500 10.5px var(--mono); color: var(--bone); white-space: nowrap; flex: none; }
 
   .tip {
@@ -267,8 +269,7 @@
     <button type="button" data-jump="251.9">3 · Permian</button>
     <button type="button" data-jump="201.4">4 · Triassic</button>
     <button type="button" data-jump="66">5 · Cretaceous</button>
-    <button type="button" data-jump="0.045">Ice-age giants</button>
-    <button type="button" data-jump="0.000345">Dodo to today</button>
+    <button type="button" data-jump="recent">Last 300,000 years</button>
     <button type="button" data-jump="now">Species in danger now</button>
   </nav>
 
@@ -276,7 +277,7 @@
     <svg id="mm-svg" preserveAspectRatio="none"></svg>
     <div class="mm-view" id="mm-view"></div>
   </div>
-  <div class="mm-caption"><span>4.6 billion years ago</span><span class="mid">Overview: the scale stretches as we get closer to today</span><span>2026</span></div>
+  <div class="mm-caption"><span>4.6 billion years ago</span><span class="mid">The whole graph at the same scale</span><span>2026</span></div>
 
   <div class="fresco-wrap">
     <div class="fresco" id="fresco" tabindex="0" aria-label="Scrollable timeline of extinctions">
@@ -293,8 +294,8 @@
       <p>Each bar is one geological stage, a slice of time a few million years long. The taller and brighter the bar, the bigger the share of sea-animal groups (genera, which are groups of closely related species) that disappeared during it. Scientists count groups rather than single species because fossils of whole groups survive better. For the Big Five, the labels also give the estimated share of species lost. The values are approximate and redrawn after Rohde &amp; Muller (2005), who used Sepkoski's fossil compendium.</p>
     </div>
     <div>
-      <h2>Why the scale changes</h2>
-      <p>Most of the story happens in the last half-billion years, and the human part happens in the last few centuries. So the timeline zooms in several times as you scroll. Each time it does, a label tells you how much time one screen-width now covers.</p>
+      <h2>One scale, start to finish</h2>
+      <p>Every centimetre of the graph stands for the same amount of time, from the birth of the Earth to today. That is why animals only appear in the last eighth of it, and why all of human history fits in its final 2 pixels. The recent extinctions are listed right after the graph for that reason.</p>
     </div>
     <div>
       <h2>What we can't count</h2>
@@ -330,17 +331,11 @@
   };
 
 
-  // ---------- Piecewise time scale (t = millions of years before 2026) ----------
-  // Widths are for desktop; small screens scale them down (see layoutFor).
-  const BASE_SEGMENTS = [
-    { from: 4600,     to: 541,      width: 3650 },
-    { from: 541,      to: 2.58,     width: 6460 },
-    { from: 2.58,     to: 0.13,     width: 520 },
-    { from: 0.13,     to: 0.0117,   width: 1180 },
-    { from: 0.0117,   to: 0.000526, width: 1120 },
-    { from: 0.000526, to: 0.000126, width: 1500 },
-    { from: 0.000126, to: 0,        width: 3000 },
-  ];
+  // ---------- One uniform time scale (t = millions of years before 2026) ----------
+  // Every pixel is the same amount of time from the first to the last one.
+  const START = 4600;
+  // Events younger than this all land in the graph's last couple of pixels, so they are listed after it
+  const RECENT = 0.5;
   const yearCE = y => (2026 - y) / 1e6; // calendar year -> t
 
   function fmtAge(t) {
@@ -365,10 +360,10 @@
   function layoutFor(compact) {
     const vw = window.innerWidth, vh = window.innerHeight;
     const L = compact
-      ? { scale: 1, cardW: Math.round(Math.min(280, Math.max(230, vw * 0.7))), chartH: 130, ribH: 16,
+      ? { pxPerMy: 9, cardW: Math.round(Math.min(280, Math.max(230, vw * 0.62))), chartH: 130, ribH: 16,
           height: Math.round(Math.min(860, Math.max(600, vh - 16))), padL: 24, font: 9.5,
           nowW: Math.max(290, Math.min(600, vw - 64)) }
-      : { scale: 1, cardW: 290, chartH: 180, ribH: 19,
+      : { pxPerMy: 6, cardW: 290, chartH: 180, ribH: 19,
           height: Math.round(Math.min(900, Math.max(680, vh - 40))), padL: 70, font: 10.5, nowW: 600 };
     // Stack the bottom block (zoom label, ticks, ribbons, chart) up from the bottom edge
     L.zoomY = L.height - 12;
@@ -380,14 +375,9 @@
     L.cardTop = 10;
     L.cardBot = L.chTop - 34;
     L.compact = compact;
-    let acc = L.padL;
-    L.segments = BASE_SEGMENTS.map(s => {
-      const w = Math.round(s.width * L.scale);
-      const seg = { ...s, width: w, x0: acc, x1: acc + w };
-      acc += w;
-      return seg;
-    });
-    L.timelineEnd = acc;
+    const w = Math.round(START * L.pxPerMy);
+    L.segments = [{ from: START, to: 0, width: w, x0: L.padL, x1: L.padL + w }];
+    L.timelineEnd = L.padL + w;
     return L;
   }
 
@@ -709,8 +699,23 @@
 
     // Cards: build them first so we can measure their real height
     const sorted = [...EVENTS].sort((a, b) => b.t - a.t);
+    const head = { isHead: true, t: RECENT };
+    sorted.splice(sorted.findIndex(e => e.t < RECENT), 0, head);
     const areaH = L.cardBot - L.cardTop;
     for (const e of sorted) {
+      if (e.isHead) {
+        const d = document.createElement("div");
+        d.className = "card recent-head";
+        d.id = "recent";
+        d.style.width = L.cardW + "px";
+        d.innerHTML = `<span class="when"><span>AFTER THE GRAPH</span></span>
+          <span class="name">The last 300,000 years</span>
+          <span class="txt">Everything from the first <em>Homo sapiens</em> to today fits inside the last 2 pixels of the graph. That is how short human history is next to the age of the Earth.</span>
+          <span class="txt">So the extinctions of this period are listed here in time order, from oldest to newest. This list has no time scale.</span>`;
+        canvas.appendChild(d);
+        e.el = d; e.h = d.offsetHeight;
+        continue;
+      }
       const b = document.createElement("button");
       b.type = "button";
       b.className = "card" + (e.big ? " big" : "");
@@ -737,8 +742,11 @@
     let prevLeft = -Infinity;
     for (const e of sorted) {
       const ex = x(e.t);
-      // Centre the card on its date, but never before the previous card (keeps reading order)
-      let left = Math.max(L.padL - 14, ex - L.cardW / 2, prevLeft);
+      // Centre the card on its date, but never before the previous card (keeps reading order).
+      // Recent events and their header start after the end of the graph.
+      let left = e.t < RECENT || e.isHead
+        ? Math.max(prevLeft, L.timelineEnd + (L.compact ? 40 : 70))
+        : Math.max(L.padL - 14, ex - L.cardW / 2, prevLeft);
       for (let guard = 0; guard < 4000; guard++) {
         const over = placed.filter(r => r.left < left + L.cardW + GAP && r.left + r.w + GAP > left);
         const tops = [L.cardTop, ...over.map(r => r.top + r.h + GAP)].sort((a, b) => a - b);
@@ -809,17 +817,15 @@
       }
     }
 
-    // Zoom markers: say in plain words how much time one screen covers from here on
+    // Scale reminder: the same everywhere, repeated so one is always close by
     const screenW = Math.max(300, fresco.clientWidth || window.innerWidth);
-    L.segments.forEach((s, i) => {
-      const span = fmtSpan((s.from - s.to) * 1e6 / s.width * screenW);
-      const label = (i === 0 ? "ONE SCREEN ≈ " : "ZOOMING IN · ONE SCREEN NOW ≈ ") + span.toUpperCase();
-      const w = label.length * L.font * 0.62 + 20;
-      if (i > 0) el("line", { x1: s.x0, x2: s.x0, y1: L.chTop, y2: L.rib2 + L.ribH, stroke: "#4a5a70", "stroke-width": 1 });
-      const gx = s.x0 + (i === 0 ? 8 : 0);
-      el("rect", { x: gx, y: L.chTop + 4, width: w, height: L.font + 11, rx: (L.font + 11) / 2, fill: "#0d131c", stroke: "#4a5a70", "stroke-width": 1 });
-      text(label, { x: gx + 10, y: L.chTop + 4 + L.font + 4, fill: "#e8d9b8", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.04em" });
-    });
+    const scaleLabel = "SAME SCALE THROUGHOUT · ONE SCREEN ≈ " + fmtSpan(screenW / L.pxPerMy * 1e6).toUpperCase();
+    const pillW = scaleLabel.length * L.font * 0.62 + 20;
+    for (let gx = L.padL + 8; gx < L.timelineEnd - pillW; gx += screenW * 4) {
+      const py = L.height - L.font - 19;
+      el("rect", { x: gx, y: py, width: pillW, height: L.font + 11, rx: (L.font + 11) / 2, fill: "#0d131c", stroke: "#4a5a70", "stroke-width": 1 });
+      text(scaleLabel, { x: gx + 10, y: py + L.font + 4, fill: "#e8d9b8", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.04em" });
+    }
 
     // Ribbons
     const charW = L.font * 0.69;
@@ -841,17 +847,8 @@
 
     // Ticks
     const TICKS = [];
-    for (let t = 4500; t >= 1000; t -= 500) TICKS.push([t, (t / 1000) + " bn"]);
-    TICKS.push([541, "541 My"]);
-    for (let t = 500; t >= 50; t -= 50) TICKS.push([t, t + " My"]);
-    TICKS.push([25, "25 My"], [2.58, "2.6 My"]);
-    TICKS.push([2, "2 My"], [1, "1 My"], [0.5, "500,000"]);
-    for (const k of [100, 75, 50, 25]) TICKS.push([k / 1000, k + ",000"]);
-    TICKS.push([0.0117, "11,700"]);
-    for (const k of [10, 8, 6, 4, 2]) TICKS.push([k / 1000, k + ",000"]);
-    for (let yr = 1500; yr <= 1900; yr += 50) TICKS.push([yearCE(yr), yr + " CE"]);
-    for (let yr = 1920; yr <= 2020; yr += 20) TICKS.push([yearCE(yr), String(yr)]);
-    TICKS.push([0, "2026"]);
+    for (let t = 4500; t >= 100; t -= 100) TICKS.push([t, t >= 1000 ? (t / 1000) + " bn" : t + " My"]);
+    TICKS.push([0, "Today"]);
     for (const [t, lbl] of TICKS) {
       const xx = x(t);
       el("line", { x1: xx, x2: xx, y1: L.tickY - 6, y2: L.tickY, stroke: "#4a5a70" });
@@ -862,6 +859,14 @@
     const leaders = el("g", {});
     const midY = (L.chTop + L.chBot) / 2;
     sorted.forEach(e => {
+      if (e.isHead) {
+        const lx = e.left + 10, bottom = e.top + e.h;
+        el("path", { d: `M${lx} ${bottom} L${lx} ${bottom + 6} L${L.timelineEnd} ${L.chTop - 8} L${L.timelineEnd} ${midY - 10}`,
+          fill: "none", stroke: "#d55181", "stroke-width": 1.2 }, leaders);
+        el("circle", { cx: L.timelineEnd, cy: midY - 10, r: 5, fill: "#d55181", stroke: "#131a24", "stroke-width": 2 }, leaders);
+        return;
+      }
+      if (e.t < RECENT) return;
       const ex = x(e.t);
       const col = CAUSES[e.causes[0]].color;
       const si = peakStage(e);
@@ -1008,6 +1013,7 @@
   document.querySelectorAll("[data-jump]").forEach(b => b.addEventListener("click", () => {
     const v = b.dataset.jump;
     if (v === "now") { fresco.scrollTo({ left: TOTAL_W, behavior: smooth() }); return; }
+    if (v === "recent") { fresco.scrollTo({ left: document.getElementById("recent").offsetLeft - 16, behavior: smooth() }); return; }
     fresco.scrollTo({ left: Math.max(0, x(parseFloat(v)) - fresco.clientWidth * (L.compact ? 0.15 : 0.3)), behavior: smooth() });
   }));
 
