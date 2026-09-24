@@ -15,4 +15,6 @@ It's one HTML file, so there's nothing to install.
 2. Double-click it. It opens in your web browser.
 3. Scroll sideways with your mouse wheel or trackpad, drag with the mouse, or use the "Jump to" buttons. Arrow keys also work once you click the fresco.
 
+On a phone, swipe left and right on the fresco and tap a panel to open its details. The layout adapts to small screens and to turning the phone sideways.
+
 You need an internet connection only for the fonts. Without one, the page still works with fallback fonts.
