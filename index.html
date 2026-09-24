@@ -1,0 +1,882 @@
+<title>The Extinction Fresco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+  /* Single dark "deep time" design, chosen on purpose: the geological
+     colour ribbon and the cause colours need a dark ground to read. */
+  :root {
+    color-scheme: dark;
+    --ground: #0d131c;
+    --surface: #131a24;
+    --surface-2: #1a2330;
+    --ink: #ece7dc;
+    --ink-2: #b3b9c3;
+    --ink-3: #7f8793;
+    --hair: #243040;
+    --hair-2: #2f3d51;
+    --bone: #e8d9b8;
+    --bone-fill: rgba(232, 217, 184, 0.16);
+    --c-impact: #c98500;
+    --c-volcanism: #d95926;
+    --c-climate: #3987e5;
+    --c-chemistry: #199e70;
+    --c-humans: #d55181;
+    --c-context: #8a8f98;
+    --display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif;
+    --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  html, body { background: var(--ground); }
+  body {
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.5;
+    padding-inline: 16px;
+    padding-block: 0 32px;
+  }
+  .wrap { max-width: 1400px; margin-inline: auto; }
+
+  header.top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 32px;
+    align-items: end;
+    padding-block: 20px 12px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(34px, 5vw, 56px);
+    line-height: 0.95;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .lede { margin: 6px 0 0; color: var(--ink-2); max-width: 68ch; font-size: 15px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: flex-end; max-width: 420px; }
+  .legend span, .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-2);
+    letter-spacing: 0.02em;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+  /* Navigation row */
+  .nav { display: flex; flex-wrap: wrap; gap: 6px; padding-block: 6px 10px; align-items: center; }
+  .nav .label {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-right: 4px;
+  }
+  .nav button {
+    font: 500 12px/1 var(--mono);
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--hair-2);
+    border-radius: 999px;
+    padding: 7px 11px;
+    cursor: pointer;
+  }
+  .nav button:hover { background: var(--surface-2); border-color: var(--ink-3); }
+  button:focus-visible, .card:focus-visible, .minimap:focus-visible, .fresco:focus-visible {
+    outline: 2px solid var(--bone); outline-offset: 2px;
+  }
+
+  /* Minimap */
+  .minimap {
+    position: relative; height: 54px; background: var(--surface);
+    border: 1px solid var(--hair); border-radius: 6px; cursor: pointer;
+    touch-action: none; overflow: hidden;
+  }
+  .minimap svg { display: block; width: 100%; height: 100%; }
+  .mm-view {
+    position: absolute; top: 0; bottom: 0; border: 1.5px solid var(--bone);
+    background: rgba(232, 217, 184, 0.08); border-radius: 4px; pointer-events: none;
+  }
+  .mm-caption {
+    display: flex; justify-content: space-between; gap: 12px;
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); padding-block: 4px 10px;
+  }
+
+  /* The fresco itself */
+  .fresco {
+    position: relative; overflow-x: auto; overflow-y: hidden;
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 8px;
+    cursor: grab; scrollbar-color: var(--hair-2) var(--surface);
+  }
+  .fresco.dragging { cursor: grabbing; user-select: none; }
+  .canvas { position: relative; height: 700px; }
+  .canvas > svg { position: absolute; inset: 0; display: block; }
+
+  .card {
+    position: absolute; width: 208px; height: 124px;
+    box-sizing: border-box; padding: 8px 10px 8px 11px;
+    background: var(--surface-2); color: var(--ink);
+    border: 1px solid var(--hair-2); border-left: 3px solid var(--cause, var(--c-context));
+    border-radius: 5px; text-align: left; cursor: pointer; font: inherit;
+    display: flex; flex-direction: column; gap: 2px; overflow: hidden;
+  }
+  .card:hover { border-color: var(--ink-3); border-left-color: var(--cause); background: #1f2a39; }
+  .card.big { box-shadow: 0 0 0 1px var(--bone) inset; }
+  .card .when { font: 500 10.5px/1.3 var(--mono); color: var(--ink-3); letter-spacing: 0.02em; display: flex; justify-content: space-between; gap: 6px; white-space: nowrap; }
+  .card .when > span { overflow: hidden; text-overflow: ellipsis; }
+  .card .when b { flex: none; }
+  .card .when b { color: var(--bone); font-weight: 500; }
+  .card .name { font: 700 18px/1.05 var(--display); letter-spacing: 0.01em; text-transform: uppercase;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: none; }
+  .card .lost {
+    font-size: 12.5px; line-height: 1.3; color: var(--ink-2);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card .chips { display: flex; gap: 8px; margin-top: auto; flex-wrap: nowrap; overflow: hidden; }
+  .card .chip { font-size: 10px; white-space: nowrap; }
+
+  .tip {
+    position: absolute; pointer-events: none; z-index: 5;
+    background: #0a0f16; border: 1px solid var(--hair-2); border-radius: 5px;
+    padding: 7px 9px; font: 12px/1.35 var(--mono); color: var(--ink); max-width: 240px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+  .tip b { font-weight: 500; color: var(--bone); }
+  .tip .muted { color: var(--ink-3); }
+
+  /* "Now" panel inside the fresco */
+  .now {
+    position: absolute; top: 10px; width: 600px; bottom: 16px;
+    box-sizing: border-box; padding: 18px 20px; overflow: auto;
+    background: #171f2b; border: 1px solid var(--c-humans); border-radius: 8px;
+  }
+  .now h2 { font: 800 30px/1 var(--display); text-transform: uppercase; margin: 0 0 6px; letter-spacing: 0.01em; }
+  .now p { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
+  .now .big-num { font: 800 36px/1 var(--display); color: var(--ink); white-space: nowrap; }
+  .now .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 8px 0 14px; }
+  .now .stats div { display: flex; flex-direction: column; gap: 2px; }
+  .now .stats small { font: 11px/1.3 var(--mono); color: var(--ink-3); }
+  .bars { display: grid; grid-template-columns: 150px minmax(0, 1fr) 42px; gap: 5px 10px; align-items: center; font-size: 13px; }
+  .bars .lbl { color: var(--ink-2); }
+  .bars .track { height: 12px; background: var(--hair); border-radius: 0 4px 4px 0; position: relative; }
+  .bars .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--c-humans); border-radius: 0 4px 4px 0; }
+  .bars .val { font: 500 12px var(--mono); text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .src { font: 10.5px/1.4 var(--mono); color: var(--ink-3); margin-top: 10px; }
+
+  /* Detail drawer */
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100%);
+    background: #111823; border-left: 1px solid var(--hair-2); z-index: 20;
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 22px calc(24px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box; overflow-y: auto;
+    box-shadow: -12px 0 40px rgba(0,0,0,0.45);
+  }
+  .drawer .close {
+    float: right; font: 500 12px var(--mono); background: var(--surface-2); color: var(--ink);
+    border: 1px solid var(--hair-2); border-radius: 999px; padding: 6px 10px; cursor: pointer;
+  }
+  .drawer .when { font: 500 12px var(--mono); color: var(--bone); margin-top: 4px; }
+  .drawer h2 { font: 800 34px/1 var(--display); text-transform: uppercase; margin: 10px 0 10px; text-wrap: balance; }
+  .drawer h3 {
+    font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--ink-3); margin: 18px 0 4px;
+  }
+  .drawer p { margin: 0; font-size: 15.5px; color: var(--ink); }
+  .drawer .chips { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+  .drawer .loss { font: 700 26px/1.1 var(--display); color: var(--bone); }
+
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 28px; margin-top: 22px; }
+  .notes h2 { font: 700 20px/1.1 var(--display); text-transform: uppercase; margin: 0 0 4px; letter-spacing: 0.02em; }
+  .notes p { margin: 0; font-size: 14px; color: var(--ink-2); }
+
+  @media (max-width: 760px) {
+    header.top { grid-template-columns: 1fr; }
+    .legend { justify-content: flex-start; }
+    .now { width: 420px; }
+    .now .stats { grid-template-columns: 1fr 1fr; }
+    .bars { grid-template-columns: 110px minmax(0, 1fr) 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>The Extinction Fresco</h1>
+      <p class="lede">4.6 billion years of life and loss, from the birth of the Earth to this year. Scroll sideways, drag, or use the buttons. Click any panel to learn what disappeared and why.</p>
+    </div>
+    <div class="legend" aria-label="Causes">
+      <span><i class="dot" style="background:var(--c-impact)"></i>Asteroid impact</span>
+      <span><i class="dot" style="background:var(--c-volcanism)"></i>Volcanism</span>
+      <span><i class="dot" style="background:var(--c-climate)"></i>Climate swings</span>
+      <span><i class="dot" style="background:var(--c-chemistry)"></i>Ocean &amp; air chemistry</span>
+      <span><i class="dot" style="background:var(--c-humans)"></i>Humans</span>
+      <span><i class="dot" style="background:var(--c-context)"></i>Milestone</span>
+    </div>
+  </header>
+
+  <nav class="nav" aria-label="Jump to">
+    <span class="label">Jump to</span>
+    <button type="button" data-jump="4540">Earth forms</button>
+    <button type="button" data-jump="2400">Oxygen crisis</button>
+    <button type="button" data-jump="443.8">Big Five 1 · Ordovician</button>
+    <button type="button" data-jump="372">2 · Devonian</button>
+    <button type="button" data-jump="251.9">3 · Permian</button>
+    <button type="button" data-jump="201.4">4 · Triassic</button>
+    <button type="button" data-jump="66">5 · Cretaceous</button>
+    <button type="button" data-jump="0.045">Ice-age giants</button>
+    <button type="button" data-jump="0.000345">Dodo to today</button>
+    <button type="button" data-jump="now">Species in danger now</button>
+  </nav>
+
+  <div class="minimap" id="minimap" tabindex="0" role="slider" aria-label="Overview of the whole fresco. Click or drag to move." aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <svg id="mm-svg" preserveAspectRatio="none"></svg>
+    <div class="mm-view" id="mm-view"></div>
+  </div>
+  <div class="mm-caption"><span>4.6 billion years ago</span><span>Overview: the scale stretches as we get closer to today</span><span>2026</span></div>
+
+  <div class="fresco" id="fresco" tabindex="0" aria-label="Scrollable timeline of extinctions">
+    <div class="canvas" id="canvas">
+      <svg id="svg" aria-hidden="true"></svg>
+    </div>
+  </div>
+
+  <section class="notes">
+    <div>
+      <h2>How to read the curve</h2>
+      <p>The pale curve shows the share of marine animal genera (groups of related species) that vanished in each geological stage. It uses genera because fossils of whole groups survive better than fossils of single species. The values are approximate and redrawn after Rohde &amp; Muller (2005), who used Sepkoski's fossil compendium.</p>
+    </div>
+    <div>
+      <h2>Why the scale changes</h2>
+      <p>Most of the story happens in the last half-billion years, and the human part happens in the last few centuries. Each dashed line on the fresco marks a zoom. The label beside it says how many years one pixel stands for in that section.</p>
+    </div>
+    <div>
+      <h2>What we can't count</h2>
+      <p>Before about 540 million years ago, life was mostly microscopic and left few fossils, so nobody can put a percentage on those crises. The same goes for the ice age and recorded history, where we know individual species instead of fossil percentages. Those sections show events without a curve.</p>
+    </div>
+  </section>
+</div>
+
+<aside class="drawer" id="drawer" hidden aria-live="polite" aria-labelledby="d-title">
+  <button type="button" class="close" id="d-close">Close ✕</button>
+  <div class="when" id="d-when"></div>
+  <h2 id="d-title"></h2>
+  <div class="chips" id="d-causes"></div>
+  <div id="d-loss-wrap"><h3>How much was lost</h3><div class="loss" id="d-loss"></div></div>
+  <h3>What disappeared</h3>
+  <p id="d-lost"></p>
+  <h3>Why</h3>
+  <p id="d-why"></p>
+  <div id="d-after-wrap"><h3>What came after</h3><p id="d-after"></p></div>
+</aside>
+
+<script>
+(() => {
+  // ---------- Causes ----------
+  const CAUSES = {
+    impact:    { label: "Asteroid impact",        color: "var(--c-impact)" },
+    volcanism: { label: "Volcanism",              color: "var(--c-volcanism)" },
+    climate:   { label: "Climate swings",         color: "var(--c-climate)" },
+    chemistry: { label: "Ocean & air chemistry",  color: "var(--c-chemistry)" },
+    humans:    { label: "Humans",                 color: "var(--c-humans)" },
+    context:   { label: "Milestone",              color: "var(--c-context)" },
+  };
+
+  // ---------- Piecewise time scale (t = millions of years before 2026) ----------
+  const PAD_L = 70;
+  const SEGMENTS = [
+    { from: 4600,   to: 541,     width: 3650, note: "1 pixel ≈ 1.1 million years" },
+    { from: 541,    to: 2.58,    width: 6460, note: "1 pixel ≈ 83,000 years" },
+    { from: 2.58,   to: 0.13,    width: 520,  note: "1 pixel ≈ 4,700 years" },
+    { from: 0.13,   to: 0.0117,  width: 1180, note: "1 pixel ≈ 100 years" },
+    { from: 0.0117, to: 0.000526,width: 1120, note: "1 pixel ≈ 10 years" },
+    { from: 0.000526, to: 0,     width: 2380, note: "1 pixel ≈ 2.5 months" },
+  ];
+  let acc = PAD_L;
+  for (const s of SEGMENTS) { s.x0 = acc; acc += s.width; s.x1 = acc; }
+  const TIMELINE_END = acc;
+  const NOW_W = 600;
+
+  function x(t) {
+    for (const s of SEGMENTS) {
+      if (t <= s.from && t >= s.to) return s.x0 + (s.from - t) / (s.from - s.to) * s.width;
+    }
+    return t > SEGMENTS[0].from ? PAD_L : TIMELINE_END;
+  }
+  function tAt(px) {
+    for (const s of SEGMENTS) {
+      if (px >= s.x0 && px <= s.x1) return s.from - (px - s.x0) / s.width * (s.from - s.to);
+    }
+    return null;
+  }
+  const yearCE = y => (2026 - y) / 1e6; // calendar year -> t
+
+  function fmtAge(t) {
+    if (t >= 1000) return (t / 1000).toFixed(t % 1000 === 0 ? 0 : 2).replace(/\.?0+$/, "") + " billion years ago";
+    if (t >= 1) return (Math.round(t * 10) / 10).toLocaleString("en") + " million years ago";
+    if (t >= 0.000526) return Math.round(t * 1e6).toLocaleString("en") + " years ago";
+    return "year " + Math.round(2026 - t * 1e6);
+  }
+
+  // ---------- Layout constants (vertical) ----------
+  const LANES = [10, 138, 266];
+  const CARD_W = 208, CARD_H = 124;
+  const CH_TOP = 408, CH_BOT = 590;         // chart area
+  const MAXPCT = 60;
+  const yPct = p => CH_BOT - p / MAXPCT * (CH_BOT - CH_TOP);
+  const RIB1 = 598, RIB2 = 618, RIB_H = 19; // eon + period ribbons
+  const TICK_Y = 648;
+
+  // ---------- Extinction intensity (approximate % of marine genera lost per stage) ----------
+  // [end of stage in Ma, % genera, stage name]
+  const SERIES = [
+    [541, 8, "Start of the Cambrian"], [529, 10, "Fortunian"], [521, 20, "Cambrian Stage 2"], [514, 45, "Botomian (Sinsk event)"],
+    [509, 35, "Toyonian"], [504.5, 30, "Wuliuan"], [500.5, 38, "Drumian"], [497, 40, "Guzhangian"], [494, 35, "Paibian"],
+    [489.5, 42, "Jiangshanian"], [485.4, 45, "Cambrian Stage 10"],
+    [477.7, 15, "Tremadocian"], [470, 12, "Floian"], [467.3, 10, "Dapingian"], [458.4, 12, "Darriwilian"], [453, 14, "Sandbian"],
+    [445.2, 24, "Katian"], [443.8, 52, "Hirnantian"],
+    [440.8, 12, "Rhuddanian"], [438.5, 10, "Aeronian"], [433.4, 14, "Telychian"], [430.5, 12, "Sheinwoodian"], [427.4, 15, "Homerian"],
+    [425.6, 10, "Gorstian"], [423, 18, "Ludfordian (Lau event)"], [419.2, 10, "Přídolí"],
+    [410.8, 10, "Lochkovian"], [407.6, 9, "Pragian"], [393.3, 14, "Emsian"], [387.7, 18, "Eifelian (Kačák event)"], [382.7, 22, "Givetian (Taghanic event)"],
+    [372.2, 35, "Frasnian (Kellwasser event)"], [358.9, 28, "Famennian (Hangenberg event)"],
+    [346.7, 12, "Tournaisian"], [330.9, 10, "Visean"], [323.2, 15, "Serpukhovian"], [315.2, 8, "Bashkirian"], [307, 9, "Moscovian"],
+    [303.7, 10, "Kasimovian"], [298.9, 10, "Gzhelian"],
+    [290.1, 8, "Sakmarian"], [283.5, 10, "Artinskian"], [273, 12, "Kungurian"], [264.3, 12, "Wordian"], [259.5, 30, "Capitanian"],
+    [254.1, 12, "Wuchiapingian"], [251.9, 56, "Changhsingian (Great Dying)"],
+    [251.2, 20, "Induan"], [247.2, 22, "Olenekian"], [242, 12, "Anisian"], [237, 10, "Ladinian"], [227, 22, "Carnian"],
+    [208.5, 18, "Norian"], [201.4, 47, "Rhaetian"],
+    [199.3, 10, "Hettangian"], [190.8, 8, "Sinemurian"], [182.7, 15, "Pliensbachian"], [174.1, 12, "Toarcian"], [170.3, 6, "Aalenian"],
+    [168.3, 8, "Bajocian"], [166.1, 7, "Bathonian"], [163.5, 9, "Callovian"], [157.3, 6, "Oxfordian"], [152.1, 8, "Kimmeridgian"], [145, 16, "Tithonian"],
+    [139.8, 7, "Berriasian"], [132.6, 8, "Valanginian"], [125.8, 6, "Hauterivian"], [121.4, 9, "Barremian"], [113, 12, "Aptian"],
+    [100.5, 10, "Albian"], [93.9, 20, "Cenomanian"], [89.8, 10, "Turonian"], [86.3, 7, "Coniacian"], [83.6, 8, "Santonian"],
+    [72.1, 9, "Campanian"], [66, 40, "Maastrichtian"],
+    [61.6, 10, "Danian"], [59.2, 6, "Selandian"], [56, 8, "Thanetian"], [47.8, 6, "Ypresian"], [41.2, 7, "Lutetian"], [37.7, 6, "Bartonian"],
+    [33.9, 14, "Priabonian"], [27.8, 6, "Rupelian"], [23, 5, "Chattian"],
+    [20.4, 4, "Aquitanian"], [16, 4, "Burdigalian"], [13.8, 6, "Langhian"], [11.6, 5, "Serravallian"], [7.2, 5, "Tortonian"],
+    [5.3, 7, "Messinian"], [3.6, 6, "Zanclean"], [2.58, 8, "Piacenzian"],
+  ];
+  function pctAt(t) {
+    for (let i = 0; i < SERIES.length - 1; i++) {
+      const [a, pa] = SERIES[i], [b, pb] = SERIES[i + 1];
+      if (t <= a && t >= b) return pa + (pb - pa) * (a - t) / (a - b);
+    }
+    return null;
+  }
+
+  // ---------- Events ----------
+  // t = start (Ma before 2026); span = optional end; causes; big = Big Five number
+  const EVENTS = [
+    { t: 4540, name: "Earth forms", when: "4.54 billion years ago", causes: ["context"],
+      lost: "Nothing yet. The planet is a ball of molten rock.",
+      why: "Dust and rock orbiting the young Sun clumped together into a planet. No life could survive the heat.",
+      after: "About 30 million years later, a Mars-sized body called Theia hit the Earth. The debris formed the Moon." },
+    { t: 4100, span: 3800, name: "Heavy bombardment", when: "about 4.1 to 3.8 billion years ago", causes: ["impact", "context"],
+      lost: "Unknown. If early life existed, some of it may have been wiped out.",
+      why: "Many geologists think a storm of asteroids hit the inner planets. Big impacts could boil the oceans. This idea is still debated.",
+      after: "The oldest widely accepted traces of life, microbial mats called stromatolites, date to about 3.5 billion years ago." },
+    { t: 3480, name: "First fossils of life", when: "about 3.48 billion years ago", causes: ["context"],
+      lost: "Nothing. This is where the count starts.",
+      why: "Layered mounds built by microbes (stromatolites) appear in rocks in Western Australia. Chemical hints of life may be even older.",
+      after: "For about 2 billion years, life stays single-celled." },
+    { t: 2400, span: 2100, name: "Great Oxidation Event", when: "about 2.4 to 2.1 billion years ago", causes: ["chemistry", "climate"],
+      lost: "Probably a large share of the microbes that lived without oxygen. We can't measure how many.",
+      why: "Cyanobacteria had learned to make energy from sunlight and released oxygen as waste. Oxygen was poison to most life at the time. It also destroyed methane in the air, which may have set off a long glaciation (the Huronian).",
+      after: "Oxygen made complex cells possible. Every animal alive today depends on this 'pollution' by early bacteria.",
+      loss: "Unmeasurable. Sometimes called the first mass extinction." },
+    { t: 1800, span: 800, name: "The Boring Billion", when: "about 1.8 billion to 800 million years ago", causes: ["context"],
+      lost: "Few known crises. Life changed slowly.",
+      why: "Oxygen levels and climate were fairly stable for a very long time.",
+      after: "Complex cells with a nucleus (eukaryotes) and the first multicellular algae appeared." },
+    { t: 717, span: 635, name: "Snowball Earth", when: "about 717 to 635 million years ago", causes: ["climate"],
+      lost: "Much of the microbial and early algal life in the oceans. The exact toll is unknown.",
+      why: "Ice sheets spread almost to the equator, twice (the Sturtian and Marinoan glaciations). Life survived near volcanic vents, in meltwater pools and under thin ice.",
+      after: "When the ice melted, nutrients flooded the oceans. Soon after, the first large, soft-bodied organisms appeared." },
+    { t: 550, span: 539, name: "End of the Ediacaran", when: "about 550 to 539 million years ago", causes: ["chemistry"],
+      lost: "Most of the Ediacaran biota: strange soft-bodied creatures such as Dickinsonia and the frond-like Charnia.",
+      why: "Oxygen-poor seas are the leading explanation. New burrowing and grazing animals may also have pushed them out.",
+      after: "The Cambrian explosion. Most major animal groups alive today appear within about 20 million years.",
+      loss: "Possibly around 80% of Ediacaran genera" },
+    { t: 514, name: "Sinsk event", when: "about 514 million years ago", causes: ["volcanism", "chemistry"],
+      lost: "Archaeocyathids (the first reef-building sponges), many early trilobites and small shelly animals.",
+      why: "Huge lava floods in Australia (the Kalkarindji province) are linked to warming and oxygen-poor seas.",
+      after: "Reef building nearly stopped for millions of years.", loss: "About 45% of marine genera" },
+    { t: 497, span: 485.4, name: "Late Cambrian crises", when: "about 497 to 485 million years ago", causes: ["chemistry"],
+      lost: "Wave after wave of trilobite families and early brachiopods.",
+      why: "Repeated drops in ocean oxygen and changes in sea temperature, recorded as carbon spikes in the rocks.",
+      after: "The Great Ordovician Biodiversification Event: life in the sea became much more varied." },
+    { t: 445.2, span: 443.8, big: 1, name: "End-Ordovician", when: "about 445 to 444 million years ago", causes: ["climate", "chemistry"],
+      lost: "Brachiopods, bryozoans, trilobites, graptolites, conodonts and many reef builders. Almost all life was still in the sea.",
+      why: "A fast ice age on the southern supercontinent Gondwana. Sea levels fell and shallow seas drained. When the ice melted, the seas lost oxygen. Two pulses hit life.",
+      after: "Survivors rebuilt reefs in the Silurian. The first plants and arthropods moved onto land.",
+      loss: "About 85% of species (about 57% of genera)" },
+    { t: 372.2, span: 358.9, big: 2, name: "Late Devonian", when: "about 372 to 359 million years ago", causes: ["chemistry", "climate", "volcanism"],
+      lost: "Reef ecosystems collapsed (stromatoporoid sponges and tabulate corals). Armoured fish (placoderms) died out by the end. Many trilobites and brachiopods too.",
+      why: "A long series of crises, with two main pulses: the Kellwasser and Hangenberg events. Oxygen-poor oceans, cooling, and volcanism (such as the Viluy Traps in Siberia). New forests on land may have washed nutrients into the sea and fed algal blooms.",
+      after: "Reefs took about 100 million years to fully recover. Four-limbed animals that survived went on to conquer the land.",
+      loss: "About 75% of species (about 35% of genera)" },
+    { t: 305, name: "Rainforest collapse", when: "about 305 million years ago", causes: ["climate"],
+      lost: "Huge coal-forming swamp forests broke into patches. Many amphibians and early plants went with them.",
+      why: "The climate became drier and cooler as ice sheets grew.",
+      after: "Reptiles, with eggs that don't dry out, spread into drier land." },
+    { t: 259.5, name: "Capitanian", when: "about 260 million years ago", causes: ["volcanism", "chemistry"],
+      lost: "Large foraminifera called fusulinids, many brachiopods and reef corals. Big plant-eating dinocephalians on land.",
+      why: "The Emeishan Traps, a large lava province in today's China, released gases that warmed the climate and soured the seas.",
+      after: "Life had only a few million years to recover before the worst crisis of all.", loss: "About 30% of marine genera" },
+    { t: 251.9, big: 3, name: "The Great Dying", when: "252 million years ago (end of the Permian)", causes: ["volcanism", "chemistry"],
+      lost: "The last trilobites, rugose and tabulate corals, blastoids, most brachiopods and crinoids. On land, gorgonopsids and most other synapsids. It is the only known mass extinction of insects.",
+      why: "The Siberian Traps erupted for hundreds of thousands of years and burned through coal beds. CO₂ warmed the planet by about 10 °C. Oceans turned acidic and lost their oxygen.",
+      after: "Recovery took about 10 million years. Among the survivors were the ancestors of dinosaurs and of mammals.",
+      loss: "About 81 to 96% of marine species (about 56% of genera); about 70% of land vertebrates" },
+    { t: 233, span: 232, name: "Carnian Pluvial Episode", when: "about 233 million years ago", causes: ["volcanism", "chemistry"],
+      lost: "Many ammonoids, crinoids, bryozoans and plants, and several groups of plant-eating reptiles.",
+      why: "The Wrangellia volcanic eruptions triggered 1 to 2 million years of hot and very wet climate.",
+      after: "Dinosaurs rose quickly afterwards, and so did modern corals and conifers." },
+    { t: 201.4, big: 4, name: "End-Triassic", when: "201 million years ago", causes: ["volcanism", "chemistry"],
+      lost: "All conodonts. Most large crocodile-line reptiles (phytosaurs, aetosaurs, rauisuchians). Many large amphibians, ammonites and bivalves.",
+      why: "The supercontinent Pangaea began to split. The Central Atlantic Magmatic Province poured out lava along the rift, bringing CO₂ warming and acidic oceans.",
+      after: "With rivals gone, dinosaurs took over the land for 135 million years.",
+      loss: "About 76% of species (about 47% of genera)" },
+    { t: 183, name: "Toarcian ocean crisis", when: "about 183 million years ago", causes: ["volcanism", "chemistry"],
+      lost: "Many ammonites, bivalves and foraminifera.",
+      why: "The Karoo-Ferrar eruptions in southern Africa and Antarctica warmed the planet. The oceans lost oxygen.",
+      after: "Marine life recovered within a few million years." },
+    { t: 93.9, name: "Cenomanian-Turonian", when: "about 94 million years ago", causes: ["volcanism", "chemistry"],
+      lost: "The last ichthyosaurs, many pliosaurs, and a large share of plankton and bivalves.",
+      why: "Undersea volcanism (the Caribbean large igneous province) set off an oxygen-free ocean episode known as OAE2.",
+      after: "Mosasaurs, giant marine lizards, spread into the empty niches.", loss: "About 20% of marine genera" },
+    { t: 66, big: 5, name: "End-Cretaceous", when: "66 million years ago", causes: ["impact", "volcanism"],
+      lost: "All non-bird dinosaurs, pterosaurs, mosasaurs, plesiosaurs, ammonites and rudist clams, along with most plankton and many plants.",
+      why: "A 10 km asteroid struck Chicxulub in today's Mexico. Fires, soot and sulphur blocked the Sun for years. The huge Deccan Traps eruptions in India had already been stressing the climate.",
+      after: "Birds, the surviving dinosaurs, spread out. Mammals grew from small creatures into whales, bats, horses and eventually us.",
+      loss: "About 76% of species (about 40% of genera)" },
+    { t: 56, name: "PETM heat spike", when: "56 million years ago", causes: ["chemistry"],
+      lost: "30 to 50% of deep-sea foraminifera (tiny shelled organisms on the sea floor).",
+      why: "A fast release of carbon warmed the planet by 5 to 8 °C and made the oceans more acidic. It is the closest natural comparison to today's warming.",
+      after: "Life on land did well. Early primates, horses and hoofed mammals spread across the continents." },
+    { t: 33.9, name: "Grande Coupure", when: "34 million years ago", causes: ["climate"],
+      lost: "Many European mammals, many plankton species and warm-water marine life.",
+      why: "Antarctica froze over for the first time. The global climate cooled and dried quickly.",
+      after: "Grasslands and cold-adapted animals slowly expanded.", loss: "About 14% of marine genera" },
+    { t: 14, name: "Middle Miocene cooling", when: "about 14 million years ago", causes: ["climate"],
+      lost: "Many marine and land species in warm regions.",
+      why: "The Antarctic ice sheet grew and global temperatures dropped sharply.",
+      after: "Grasslands spread and grazing animals flourished." },
+    { t: 3.6, span: 2.6, name: "Pliocene sea giants", when: "about 3.6 to 2.6 million years ago", causes: ["climate"],
+      lost: "About a third of marine megafauna genera, including the giant shark Megalodon, some sea cows and sea birds.",
+      why: "Rapid cooling and swinging sea levels destroyed the rich coastal waters these animals depended on.",
+      after: "The ice ages of the Quaternary began." },
+    { t: 0.3, name: "Homo sapiens", when: "about 300,000 years ago", causes: ["context"],
+      lost: "Nothing yet.",
+      why: "Our species appears in Africa. Other humans, like Neanderthals and Denisovans, share the planet.",
+      after: "Humans spread across the world over the next 250,000 years." },
+    { t: 0.045, name: "Australia's giants", when: "about 45,000 years ago", causes: ["humans", "climate"],
+      lost: "Diprotodon (a wombat the size of a rhino), the giant bird Genyornis, the marsupial lion Thylacoleo and giant kangaroos.",
+      why: "The losses followed soon after people arrived in Australia. Hunting and fire are the leading explanations, with climate playing a part.",
+      after: "Australia lost almost all its land animals over 45 kg." },
+    { t: 0.04, name: "Neanderthals", when: "about 40,000 years ago", causes: ["humans", "climate"],
+      lost: "Our close cousins, Homo neanderthalensis. Many people today carry a little of their DNA.",
+      why: "Competition with modern humans, small scattered populations and harsh ice-age climate swings.",
+      after: "Homo sapiens became the last human species standing." },
+    { t: 0.013, span: 0.0115, name: "Americas' megafauna", when: "about 13,000 to 11,500 years ago", causes: ["humans", "climate"],
+      lost: "Mammoths, mastodons, sabre-toothed cats (Smilodon), giant ground sloths, glyptodonts, American horses and camels.",
+      why: "Human hunters arrived just as the ice age ended. The climate changed fast. Most researchers think the two together were fatal.",
+      after: "The Americas lost about 70% of their large mammals." },
+    { t: 0.0077, name: "Irish elk", when: "about 7,700 years ago", causes: ["climate", "humans"],
+      lost: "Megaloceros giganteus, a deer with antlers up to 3.6 m wide.",
+      why: "Its last refuge in Siberia shrank as forests replaced open land. Human hunting may have finished it.",
+      after: "" },
+    { t: 0.004, name: "Last mammoths", when: "about 4,000 years ago", causes: ["climate"],
+      lost: "The woolly mammoths of Wrangel Island, in the Arctic Ocean.",
+      why: "Rising seas cut them off on a small island. The tiny, inbred population was fragile. Bad weather or poor water may have ended it.",
+      after: "At that time, the pyramids of Giza already stood in Egypt." },
+    { t: yearCE(1000), name: "Elephant birds", when: "about 1,000 years ago", causes: ["humans"],
+      lost: "Aepyornis and Vorombe of Madagascar. At up to 3 m tall and 700 kg, they were among the largest birds ever.",
+      why: "Hunting and collecting their huge eggs, plus changes to the land after people settled Madagascar.",
+      after: "" },
+    { t: yearCE(1200), span: yearCE(1500), name: "Pacific island birds", when: "about 1200 to 1500 CE", causes: ["humans"],
+      lost: "Possibly around 1,000 species of island birds, mostly flightless rails.",
+      why: "People settled remote Pacific islands and brought rats, pigs and dogs. They also hunted and cleared forests.",
+      after: "One of the largest extinction waves caused by humans before modern times." },
+    { t: yearCE(1445), name: "Moa", when: "around 1445 CE", causes: ["humans"],
+      lost: "All nine species of moa, giant flightless birds of New Zealand, along with Haast's eagle, which hunted them.",
+      why: "Hunting after Polynesian settlers arrived. The moa vanished within about 200 years.",
+      after: "" },
+    { t: yearCE(1627), name: "Aurochs", when: "1627", causes: ["humans"],
+      lost: "The wild ancestor of all cattle. The last cow died in the Jaktorów forest, Poland.",
+      why: "Hunting, loss of forest, and diseases caught from farm cattle.",
+      after: "" },
+    { t: yearCE(1681), name: "Dodo", when: "last seen around 1662 to 1681", causes: ["humans"],
+      lost: "Raphus cucullatus, a flightless pigeon from Mauritius.",
+      why: "Sailors hunted it. Rats, pigs and monkeys brought by ships ate its eggs.",
+      after: "It was gone less than a century after Europeans first reached the island." },
+    { t: yearCE(1768), name: "Steller's sea cow", when: "1768", causes: ["humans"],
+      lost: "Hydrodamalis gigas, a sea cow up to 9 m long in the Bering Sea.",
+      why: "Hunted for meat by fur traders. It was gone 27 years after scientists first described it.",
+      after: "" },
+    { t: yearCE(1844), name: "Great auk", when: "1844", causes: ["humans"],
+      lost: "Pinguinus impennis, the flightless 'penguin of the north'.",
+      why: "Hunted for meat, feathers and oil. The last known pair was killed on Eldey, Iceland, for a collector.",
+      after: "" },
+    { t: yearCE(1883), name: "Quagga", when: "1883", causes: ["humans"],
+      lost: "A half-striped zebra of South Africa. The last one died in Amsterdam Zoo.",
+      why: "Hunted for meat and hides, and to free grazing land for livestock.",
+      after: "" },
+    { t: yearCE(1914), name: "Passenger pigeon", when: "1914", causes: ["humans"],
+      lost: "Ectopistes migratorius. Martha, the last one, died at Cincinnati Zoo.",
+      why: "Once possibly the most numerous bird in North America, in the billions. Commercial hunting and forest clearing wiped it out in about 50 years.",
+      after: "" },
+    { t: yearCE(1936), name: "Thylacine", when: "1936", causes: ["humans"],
+      lost: "The 'Tasmanian tiger', a striped marsupial predator. The last known one died in Hobart Zoo.",
+      why: "Government bounties paid hunters to kill it, plus dogs, disease and habitat loss.",
+      after: "" },
+    { t: yearCE(1952), name: "Caribbean monk seal", when: "last seen 1952", causes: ["humans"],
+      lost: "Neomonachus tropicalis, the only seal native to the Caribbean.",
+      why: "Hunted for oil. Overfishing emptied its food supply. It was declared extinct in 2008.",
+      after: "" },
+    { t: yearCE(1989), name: "Golden toad", when: "last seen 1989", causes: ["humans", "chemistry"],
+      lost: "Incilius periglenes, a bright orange toad from the cloud forest of Monteverde, Costa Rica.",
+      why: "Chytrid fungus, spread around the world by people, together with a warming, drier climate. Chytrid has hit more than 500 amphibian species.",
+      after: "" },
+    { t: yearCE(2006), name: "Baiji", when: "declared functionally extinct 2006", causes: ["humans"],
+      lost: "The Yangtze river dolphin, a species about 20 million years old.",
+      why: "Caught in fishing gear, hit by boats, and cut off by dams and pollution.",
+      after: "" },
+    { t: yearCE(2012), name: "Pinta Island tortoise", when: "2012", causes: ["humans"],
+      lost: "Chelonoidis abingdonii. Its last member, 'Lonesome George', died in the Galápagos.",
+      why: "Whalers took tortoises for food. Goats let loose on the island ate its vegetation.",
+      after: "" },
+    { t: yearCE(2016), name: "Bramble Cay melomys", when: "last seen 2009, declared 2016", causes: ["humans", "chemistry"],
+      lost: "A small rodent that lived only on one tiny island in the Torres Strait, Australia.",
+      why: "Rising seas and storm surges flooded its island. It is the first mammal extinction linked to human-caused climate change.",
+      after: "" },
+    { t: yearCE(2018), name: "Northern white rhino", when: "2018, the last male died", causes: ["humans"],
+      lost: "Ceratotherium simum cottoni. Only two females remain, so it is 'functionally extinct'.",
+      why: "Poaching for horn and war across its range in Central Africa.",
+      after: "Scientists are trying IVF with stored cells and southern white rhino surrogate mothers." },
+  ];
+
+
+  // ---------- Card layout (lanes), computed before drawing ----------
+  const laneEnd = LANES.map(() => -Infinity);
+  const sorted = [...EVENTS].sort((a, b) => b.t - a.t);
+  for (const e of sorted) {
+    const ex = x(e.t);
+    let best = 0;
+    for (let i = 0; i < LANES.length; i++) if (laneEnd[i] <= ex - 8) { best = i; break; } else if (laneEnd[i] < laneEnd[best]) best = i;
+    e.left = Math.max(ex - 14, laneEnd[best] + 10);
+    e.top = LANES[best];
+    laneEnd[best] = e.left + CARD_W;
+  }
+  const NOW_X = Math.max(TIMELINE_END + 120, Math.max(...laneEnd) + 48);
+  const TOTAL_W = NOW_X + NOW_W + 60;
+
+  // ---------- Geological ribbons (ICS colours) ----------
+  const EONS = [
+    ["Hadean", 4600, 4031, "#AE027E"], ["Archean", 4031, 2500, "#F0047F"], ["Proterozoic", 2500, 538.8, "#F73563"],
+    ["Phanerozoic", 538.8, 0, "#9AD9DD"],
+  ];
+  const PERIODS = [
+    ["Hadean", 4600, 4031, "#AE027E"], ["Eoarchean", 4031, 3600, "#DA037F"], ["Paleoarchean", 3600, 3200, "#F444A9"],
+    ["Mesoarchean", 3200, 2800, "#F768A9"], ["Neoarchean", 2800, 2500, "#F99BC1"], ["Paleoproterozoic", 2500, 1600, "#F74370"],
+    ["Mesoproterozoic", 1600, 1000, "#FDB462"], ["Tonian", 1000, 720, "#FEBF4E"], ["Cryogenian", 720, 635, "#FECC5C"],
+    ["Ediacaran", 635, 538.8, "#FED96A"], ["Cambrian", 538.8, 485.4, "#7FA056"], ["Ordovician", 485.4, 443.8, "#009270"],
+    ["Silurian", 443.8, 419.2, "#B3E1B6"], ["Devonian", 419.2, 358.9, "#CB8C37"], ["Carboniferous", 358.9, 298.9, "#67A599"],
+    ["Permian", 298.9, 251.9, "#F04028"], ["Triassic", 251.9, 201.4, "#812B92"], ["Jurassic", 201.4, 145, "#34B2C9"],
+    ["Cretaceous", 145, 66, "#7FC64E"], ["Paleogene", 66, 23, "#FD9A52"], ["Neogene", 23, 2.58, "#FFE619"],
+    ["Pleistocene", 2.58, 0.0117, "#FFF2AE"], ["Holocene", 0.0117, 0, "#FEF2E0"],
+  ];
+
+  // ---------- Build SVG ----------
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("svg");
+  const canvas = document.getElementById("canvas");
+  canvas.style.width = TOTAL_W + "px";
+  svg.setAttribute("width", TOTAL_W);
+  svg.setAttribute("height", 700);
+  svg.setAttribute("viewBox", `0 0 ${TOTAL_W} 700`);
+
+  function el(tag, attrs, parent = svg) {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    parent.appendChild(n);
+    return n;
+  }
+  function text(str, attrs, parent = svg) { const n = el("text", attrs, parent); n.textContent = str; return n; }
+  function inkFor(hex) {
+    const h = hex.replace("#", "");
+    const [r, g, b] = [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16) / 255)
+      .map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.25 ? "#111418" : "#ffffff";
+  }
+
+  const defs = el("defs", {});
+  const pat = el("pattern", { id: "hatch", width: 8, height: 8, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+  el("line", { x1: 0, y1: 0, x2: 0, y2: 8, stroke: "#243040", "stroke-width": 2 }, pat);
+
+  // Unmeasured zones
+  const phanX0 = x(541), phanX1 = x(2.58);
+  const unmeasured = [[PAD_L, phanX0, "Too early to count", "Life was mostly microscopic and left few fossils. Events are shown, but no percentage."],
+                      [phanX1, TIMELINE_END, "Counted species by species", "Here we know individual species that vanished, not fossil percentages."]];
+  for (const [a, b, t1, t2] of unmeasured) {
+    el("rect", { x: a, y: CH_TOP, width: b - a, height: CH_BOT - CH_TOP, fill: "url(#hatch)" });
+    const step = 1400;
+    for (let cx = a + 30; cx < b - 300; cx += step) {
+      text(t1, { x: cx, y: CH_BOT - 34, fill: "#7f8793", "font-family": "IBM Plex Mono, monospace", "font-size": 11, "letter-spacing": "0.06em" }).textContent = t1.toUpperCase();
+      text(t2, { x: cx, y: CH_BOT - 18, fill: "#7f8793", "font-family": "Source Serif 4, Georgia, serif", "font-size": 12.5, "font-style": "italic" });
+    }
+  }
+
+  // Gridlines + y labels for the measured zone
+  for (const p of [0, 10, 20, 30, 40, 50, 60]) {
+    const yy = yPct(p);
+    el("line", { x1: phanX0, x2: phanX1, y1: yy, y2: yy, stroke: p === 0 ? "#3a4a60" : "#1f2a38", "stroke-width": 1 });
+    for (let gx = phanX0 + 6; gx < phanX1 - 200; gx += 1100) {
+      text(p + "%", { x: gx, y: yy - 4, fill: "#7f8793", "font-family": "IBM Plex Mono, monospace", "font-size": 10.5 });
+    }
+  }
+  text("% OF MARINE GENERA LOST PER STAGE (APPROX.)", { x: phanX0 + 44, y: CH_TOP - 6, fill: "#b3b9c3", "font-family": "IBM Plex Mono, monospace", "font-size": 10.5, "letter-spacing": "0.06em" });
+
+  // Event span bands (behind curve)
+  for (const e of EVENTS) {
+    if (e.span === undefined) continue;
+    const a = x(e.t), b = x(e.span);
+    if (b - a < 2) continue;
+    const c = CAUSES[e.causes[0]].color;
+    el("rect", { x: a, y: CH_TOP, width: b - a, height: CH_BOT - CH_TOP, fill: c, "fill-opacity": 0.13 });
+  }
+
+  // Curve (smooth-ish: straight segments between stage ends, then area)
+  const pts = SERIES.map(([t, p]) => [x(t), yPct(p)]);
+  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  el("path", { d: line + ` L${pts[pts.length - 1][0]} ${CH_BOT} L${pts[0][0]} ${CH_BOT} Z`, fill: "rgba(232,217,184,0.14)" });
+  el("path", { d: line, fill: "none", stroke: "#e8d9b8", "stroke-width": 2, "stroke-linejoin": "round" });
+
+  // Segment scale breaks
+  SEGMENTS.forEach((s, i) => {
+    if (i > 0) el("line", { x1: s.x0, x2: s.x0, y1: 4, y2: TICK_Y + 26, stroke: "#4a5a70", "stroke-dasharray": "3 5", "stroke-width": 1 });
+    text("ZOOM " + (i + 1) + " · " + s.note, { x: s.x0 + 10, y: 686, fill: "#b3b9c3", "font-family": "IBM Plex Mono, monospace", "font-size": 10.5, "letter-spacing": "0.04em" });
+  });
+
+  // Ribbons
+  function ribbon(rows, y) {
+    for (const [name, a, b, col] of rows) {
+      const xa = x(Math.min(a, 4600)), xb = x(b);
+      if (xb - xa <= 0) continue;
+      el("rect", { x: xa, y, width: xb - xa - 1, height: RIB_H, fill: col });
+      const ink = inkFor(col);
+      const w = xb - xa;
+      const lbl = name.length * 7.2 + 12;
+      if (w < lbl) continue;
+      const repeat = Math.max(1, Math.floor(w / 1500));
+      for (let r = 0; r < repeat; r++) {
+        const cx = xa + (w / repeat) * r + 8;
+        text(name.toUpperCase(), { x: cx, y: y + 13.5, fill: ink, "font-family": "IBM Plex Mono, monospace", "font-size": 10.5, "font-weight": 500, "letter-spacing": "0.06em" });
+      }
+    }
+  }
+  ribbon(EONS, RIB1);
+  ribbon(PERIODS, RIB2);
+
+  // Ticks
+  const TICKS = [];
+  for (let t = 4500; t >= 1000; t -= 500) TICKS.push([t, (t / 1000) + " bn"]);
+  TICKS.push([541, "541 My"]);
+  for (let t = 500; t >= 50; t -= 50) TICKS.push([t, t + " My"]);
+  TICKS.push([25, "25 My"], [2.58, "2.6 My"]);
+  TICKS.push([2, "2 My"], [1, "1 My"], [0.5, "500,000"]);
+  for (const k of [100, 75, 50, 25]) TICKS.push([k / 1000, k + ",000"]);
+  TICKS.push([0.0117, "11,700"]);
+  for (const k of [10, 8, 6, 4, 2]) TICKS.push([k / 1000, k + ",000"]);
+  for (let yr = 1500; yr <= 2000; yr += 50) TICKS.push([yearCE(yr), yr + " CE"]);
+  TICKS.push([0, "2026"]);
+  for (const [t, lbl] of TICKS) {
+    const xx = x(t);
+    el("line", { x1: xx, x2: xx, y1: TICK_Y - 6, y2: TICK_Y, stroke: "#4a5a70" });
+    text(lbl, { x: xx, y: TICK_Y + 13, fill: "#b3b9c3", "font-family": "IBM Plex Mono, monospace", "font-size": 10.5, "text-anchor": "middle" });
+  }
+  text("years ago →", { x: PAD_L - 60, y: TICK_Y + 13, fill: "#7f8793", "font-family": "IBM Plex Mono, monospace", "font-size": 10 });
+
+  // ---------- Cards + leaders ----------
+  const leaders = el("g", {});
+  sorted.forEach(e => {
+    const ex = x(e.t);
+    const left = e.left, top = e.top;
+
+    const col = CAUSES[e.causes[0]].color;
+    const inCurve = e.t <= 541 && e.t >= 2.58;
+    const py = inCurve ? yPct(pctAt(e.t)) : (CH_TOP + CH_BOT) / 2 - 10;
+    const lx = Math.min(Math.max(ex, left + 6), left + CARD_W - 6);
+    el("path", { d: `M${lx} ${top + CARD_H} L${lx} ${top + CARD_H + 8} L${ex} ${Math.min(top + CARD_H + 30, py - 4)} L${ex} ${py}`,
+      fill: "none", stroke: col, "stroke-width": 1.2, "stroke-opacity": 0.8 }, leaders);
+    el("circle", { cx: ex, cy: py, r: e.big ? 6 : 4.5, fill: col, stroke: "#131a24", "stroke-width": 2 }, leaders);
+
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "card" + (e.big ? " big" : "");
+    b.style.left = left + "px";
+    b.style.top = top + "px";
+    b.style.setProperty("--cause", col);
+    b.innerHTML = `<span class="when"><span>${e.when}</span>${e.big ? `<b>BIG FIVE #${e.big}</b>` : ""}</span>
+      <span class="name">${e.name}</span>
+      <span class="lost">${e.loss ? e.loss : e.lost}</span>
+      <span class="chips">${e.causes.map(c => `<span class="chip"><i class="dot" style="background:${CAUSES[c].color}"></i>${CAUSES[c].label}</span>`).join("")}</span>`;
+    b.addEventListener("click", () => openDrawer(e));
+    canvas.appendChild(b);
+  });
+
+  // ---------- Now panel ----------
+  const GROUPS = [
+    ["Cycads", 69], ["Reef-building corals", 44], ["Amphibians", 41], ["Sharks & rays", 37],
+    ["Conifers", 34], ["Mammals", 26], ["Reptiles", 21], ["Birds", 12],
+  ];
+  const now = document.createElement("section");
+  now.className = "now";
+  now.id = "now";
+  now.style.left = NOW_X + "px";
+  now.innerHTML = `
+    <div class="when" style="font:500 11px var(--mono);color:var(--ink-3);letter-spacing:.06em">TODAY · 2026</div>
+    <h2>Species in danger now</h2>
+    <p>Scientists debate whether we are entering a sixth mass extinction. The Big Five each killed about three-quarters of all species. We are far from that total, but the speed is alarming: vertebrates are now vanishing up to 100 times faster than the natural background rate.</p>
+    <div class="stats">
+      <div><span class="big-num">46,000+</span><small>species on the IUCN Red List are threatened (about 28% of those assessed)</small></div>
+      <div><span class="big-num">~900</span><small>species recorded as extinct since 1500 CE</small></div>
+      <div><span class="big-num">~1 million</span><small>species at risk worldwide, estimated by IPBES (2019)</small></div>
+    </div>
+    <div style="font:500 11px var(--mono);color:var(--ink-3);letter-spacing:.06em;margin-bottom:6px">SHARE OF ASSESSED SPECIES THREATENED, BY GROUP</div>
+    <div class="bars">${GROUPS.map(([g, v]) => `<span class="lbl">${g}</span><span class="track" title="${g}: ${v}% threatened"><span class="fill" style="width:${v}%"></span></span><span class="val">${v}%</span>`).join("")}</div>
+    <p style="margin-top:12px">The main causes today: habitat loss (farming, logging, cities), overhunting and overfishing, invasive species, pollution, and climate change. Unlike the asteroid, these are choices, and every one of them can be slowed.</p>
+    <div class="src">Sources: IUCN Red List 2024; IPBES Global Assessment 2019; Ceballos et al., Science Advances 2015. Figures rounded.</div>`;
+  canvas.appendChild(now);
+  el("line", { x1: TIMELINE_END, x2: NOW_X, y1: (CH_TOP + CH_BOT) / 2, y2: (CH_TOP + CH_BOT) / 2, stroke: "#d55181", "stroke-dasharray": "2 4" });
+
+  // ---------- Hover tooltip on the curve ----------
+  const tip = document.createElement("div");
+  tip.className = "tip"; tip.hidden = true;
+  canvas.appendChild(tip);
+  const cross = el("line", { y1: CH_TOP, y2: CH_BOT, stroke: "#e8d9b8", "stroke-width": 1, "stroke-opacity": 0.5, visibility: "hidden" });
+  const crossDot = el("circle", { r: 5, fill: "#e8d9b8", stroke: "#131a24", "stroke-width": 2, visibility: "hidden" });
+  const hit = el("rect", { x: phanX0, y: CH_TOP - 10, width: phanX1 - phanX0, height: CH_BOT - CH_TOP + 10, fill: "transparent" });
+  hit.addEventListener("pointermove", ev => {
+    const r = canvas.getBoundingClientRect();
+    const px = ev.clientX - r.left;
+    const t = tAt(px);
+    if (t === null) return;
+    let bestI = 0, bestD = Infinity;
+    SERIES.forEach(([st], i) => { const d = Math.abs(x(st) - px); if (d < bestD) { bestD = d; bestI = i; } });
+    const [st, sp, name] = SERIES[bestI];
+    const sx = x(st), sy = yPct(sp);
+    cross.setAttribute("x1", sx); cross.setAttribute("x2", sx); cross.setAttribute("visibility", "visible");
+    crossDot.setAttribute("cx", sx); crossDot.setAttribute("cy", sy); crossDot.setAttribute("visibility", "visible");
+    tip.innerHTML = `<b>${name}</b><br>ends ${fmtAge(st)}<br>~${sp}% of marine genera lost<br><span class="muted">approximate</span>`;
+    tip.hidden = false;
+    const tx = sx + 14 + 240 > TOTAL_W ? sx - 254 : sx + 14;
+    tip.style.left = tx + "px";
+    tip.style.top = (CH_TOP + 8) + "px";
+  });
+  hit.addEventListener("pointerleave", () => {
+    tip.hidden = true; cross.setAttribute("visibility", "hidden"); crossDot.setAttribute("visibility", "hidden");
+  });
+
+  // ---------- Scrolling, dragging, keyboard ----------
+  const fresco = document.getElementById("fresco");
+  fresco.addEventListener("wheel", ev => {
+    if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX)) {
+      fresco.scrollLeft += ev.deltaY;
+      ev.preventDefault();
+    }
+  }, { passive: false });
+  let drag = null;
+  fresco.addEventListener("pointerdown", ev => {
+    if (ev.pointerType !== "mouse" || ev.button !== 0 || ev.target.closest(".card, .now")) return;
+    drag = { x: ev.clientX, s: fresco.scrollLeft, moved: false };
+    fresco.classList.add("dragging");
+  });
+  window.addEventListener("pointermove", ev => {
+    if (!drag) return;
+    fresco.scrollLeft = drag.s - (ev.clientX - drag.x);
+  });
+  window.addEventListener("pointerup", () => { drag = null; fresco.classList.remove("dragging"); });
+  fresco.addEventListener("keydown", ev => {
+    const step = ev.shiftKey ? fresco.clientWidth * 0.9 : 200;
+    if (ev.key === "ArrowRight") { fresco.scrollBy({ left: step, behavior: "smooth" }); ev.preventDefault(); }
+    if (ev.key === "ArrowLeft") { fresco.scrollBy({ left: -step, behavior: "smooth" }); ev.preventDefault(); }
+    if (ev.key === "Home") { fresco.scrollTo({ left: 0, behavior: "smooth" }); ev.preventDefault(); }
+    if (ev.key === "End") { fresco.scrollTo({ left: TOTAL_W, behavior: "smooth" }); ev.preventDefault(); }
+  });
+
+  function scrollToX(px) {
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    fresco.scrollTo({ left: Math.max(0, px - fresco.clientWidth * 0.3), behavior: reduce ? "auto" : "smooth" });
+  }
+  document.querySelectorAll("[data-jump]").forEach(b => b.addEventListener("click", () => {
+    const v = b.dataset.jump;
+    if (v === "now") { fresco.scrollTo({ left: TOTAL_W, behavior: "smooth" }); return; }
+    scrollToX(x(parseFloat(v)));
+  }));
+
+  // ---------- Minimap ----------
+  const mm = document.getElementById("minimap");
+  const mmSvg = document.getElementById("mm-svg");
+  const mmView = document.getElementById("mm-view");
+  const MMH = 54;
+  mmSvg.setAttribute("viewBox", `0 0 ${TOTAL_W} ${MMH}`);
+  const mmY = p => 40 - p / MAXPCT * 34;
+  function mmEl(tag, attrs) { return el(tag, attrs, mmSvg); }
+  for (const [, a, b, col] of PERIODS) {
+    const xa = x(Math.min(a, 4600)), xb = x(b);
+    mmEl("rect", { x: xa, y: 44, width: Math.max(0, xb - xa), height: 10, fill: col });
+  }
+  mmEl("path", { d: SERIES.map(([t, p], i) => (i ? "L" : "M") + x(t) + " " + mmY(p)).join(" ") + ` L${phanX1} 40 L${phanX0} 40 Z`, fill: "rgba(232,217,184,0.35)" });
+  mmEl("path", { d: SERIES.map(([t, p], i) => (i ? "L" : "M") + x(t) + " " + mmY(p)).join(" "), fill: "none", stroke: "#e8d9b8", "stroke-width": 1.5, "vector-effect": "non-scaling-stroke" });
+  for (const e of EVENTS) {
+    mmEl("line", { x1: x(e.t), x2: x(e.t), y1: e.big ? 2 : 30, y2: 42, stroke: CAUSES[e.causes[0]].color, "stroke-width": e.big ? 2 : 1.2, "vector-effect": "non-scaling-stroke" });
+  }
+  mmEl("rect", { x: NOW_X, y: 6, width: NOW_W, height: 36, fill: "#d55181", "fill-opacity": 0.35 });
+  SEGMENTS.slice(1).forEach(s => mmEl("line", { x1: s.x0, x2: s.x0, y1: 0, y2: MMH, stroke: "#4a5a70", "stroke-width": 1, "stroke-dasharray": "2 3", "vector-effect": "non-scaling-stroke" }));
+
+  function syncMini() {
+    const w = mm.clientWidth;
+    const f = w / TOTAL_W;
+    mmView.style.left = (fresco.scrollLeft * f) + "px";
+    mmView.style.width = Math.max(6, fresco.clientWidth * f) + "px";
+    const max = TOTAL_W - fresco.clientWidth;
+    mm.setAttribute("aria-valuenow", Math.round(max > 0 ? fresco.scrollLeft / max * 100 : 0));
+  }
+  fresco.addEventListener("scroll", syncMini, { passive: true });
+  window.addEventListener("resize", syncMini);
+  let mmDrag = false;
+  function mmJump(ev) {
+    const r = mm.getBoundingClientRect();
+    const px = (ev.clientX - r.left) / r.width * TOTAL_W;
+    fresco.scrollLeft = px - fresco.clientWidth / 2;
+  }
+  mm.addEventListener("pointerdown", ev => { mmDrag = true; mm.setPointerCapture(ev.pointerId); mmJump(ev); });
+  mm.addEventListener("pointermove", ev => { if (mmDrag) mmJump(ev); });
+  mm.addEventListener("pointerup", () => { mmDrag = false; });
+  mm.addEventListener("keydown", ev => {
+    if (ev.key === "ArrowRight") { fresco.scrollLeft += fresco.clientWidth * 0.5; ev.preventDefault(); }
+    if (ev.key === "ArrowLeft") { fresco.scrollLeft -= fresco.clientWidth * 0.5; ev.preventDefault(); }
+  });
+  syncMini();
+
+  // ---------- Drawer ----------
+  const drawer = document.getElementById("drawer");
+  let lastFocus = null;
+  function openDrawer(e) {
+    lastFocus = document.activeElement;
+    document.getElementById("d-when").textContent = e.when + (e.big ? " · Big Five #" + e.big : "");
+    document.getElementById("d-title").textContent = e.name;
+    document.getElementById("d-causes").innerHTML = e.causes.map(c => `<span class="chip"><i class="dot" style="background:${CAUSES[c].color}"></i>${CAUSES[c].label}</span>`).join("");
+    const loss = e.loss || (e.t <= 541 && e.t >= 2.58 ? `About ${Math.round(pctAt(e.t))}% of marine genera` : "");
+    document.getElementById("d-loss-wrap").hidden = !loss;
+    document.getElementById("d-loss").textContent = loss;
+    document.getElementById("d-lost").textContent = e.lost;
+    document.getElementById("d-why").textContent = e.why;
+    document.getElementById("d-after-wrap").hidden = !e.after;
+    document.getElementById("d-after").textContent = e.after || "";
+    drawer.hidden = false;
+    document.getElementById("d-close").focus();
+  }
+  function closeDrawer() { drawer.hidden = true; if (lastFocus) lastFocus.focus(); }
+  document.getElementById("d-close").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !drawer.hidden) closeDrawer(); });
+})();
+</script>
