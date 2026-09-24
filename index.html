@@ -121,27 +121,30 @@
   .canvas > svg { position: absolute; inset: 0; display: block; }
 
   .card {
-    position: absolute; width: 208px; height: 124px; -webkit-tap-highlight-color: transparent;
-    box-sizing: border-box; padding: 8px 10px 8px 11px;
+    position: absolute; width: 290px; -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box; padding: 10px 12px 10px 13px;
     background: var(--surface-2); color: var(--ink);
     border: 1px solid var(--hair-2); border-left: 3px solid var(--cause, var(--c-context));
-    border-radius: 5px; text-align: left; cursor: pointer; font: inherit;
-    display: flex; flex-direction: column; gap: 2px; overflow: hidden;
+    border-radius: 6px; text-align: left; cursor: pointer; font: inherit;
+    display: flex; flex-direction: column; gap: 5px; overflow: hidden;
   }
   .card:hover { border-color: var(--ink-3); border-left-color: var(--cause); background: #1f2a39; }
   .card.big { box-shadow: 0 0 0 1px var(--bone) inset; }
-  .card .when { font: 500 10.5px/1.3 var(--mono); color: var(--ink-3); letter-spacing: 0.02em; display: flex; justify-content: space-between; gap: 6px; white-space: nowrap; }
-  .card .when > span { overflow: hidden; text-overflow: ellipsis; }
-  .card .when b { flex: none; }
-  .card .when b { color: var(--bone); font-weight: 500; }
-  .card .name { font: 700 18px/1.05 var(--display); letter-spacing: 0.01em; text-transform: uppercase;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: none; }
-  .card .lost {
-    font-size: 12.5px; line-height: 1.3; color: var(--ink-2);
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  .card .when { font: 500 10.5px/1.3 var(--mono); color: var(--ink-3); letter-spacing: 0.02em; display: flex; justify-content: space-between; gap: 8px; }
+  .card .when b { flex: none; color: var(--bone); font-weight: 500; }
+  .card .name { font: 700 21px/1.05 var(--display); letter-spacing: 0.01em; text-transform: uppercase; text-wrap: balance; }
+  .card .loss { font: 700 15px/1.2 var(--display); color: var(--bone); letter-spacing: 0.01em; }
+  .card .txt { font-size: 13px; line-height: 1.4; color: var(--ink-2); margin: 0; }
+  .card .txt i {
+    font: normal 500 9.5px/1 var(--mono); color: var(--ink-3); text-transform: uppercase;
+    letter-spacing: 0.1em; display: block; margin-bottom: 2px;
   }
-  .card .chips { display: flex; gap: 8px; margin-top: auto; flex-wrap: nowrap; overflow: hidden; }
+  .card.clip .why { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .card.clip2 .lostt { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 2px; }
+  .card .chips { display: flex; gap: 4px 10px; flex-wrap: wrap; }
   .card .chip { font-size: 10px; white-space: nowrap; }
+  .card .more { font: 500 10.5px var(--mono); color: var(--bone); white-space: nowrap; flex: none; }
 
   .tip {
     position: absolute; pointer-events: none; z-index: 5;
@@ -227,10 +230,9 @@
     .nav button { padding: 10px 13px; }
     .drawer .close { padding: 9px 13px; }
   }
-  .compact .card { padding: 7px 8px 7px 9px; }
-  .compact .card .name { font-size: 16px; }
-  .compact .card .lost { font-size: 11.5px; }
-  .compact .card .when { font-size: 10px; }
+  .compact .card { padding: 9px 10px 9px 11px; gap: 4px; }
+  .compact .card .name { font-size: 19px; }
+  .compact .card .txt { font-size: 12.5px; }
   .compact .now { padding: 14px 14px; }
   .compact .now h2 { font-size: 24px; }
   .compact .now p { font-size: 13.5px; }
@@ -336,7 +338,8 @@
     { from: 2.58,     to: 0.13,     width: 520 },
     { from: 0.13,     to: 0.0117,   width: 1180 },
     { from: 0.0117,   to: 0.000526, width: 1120 },
-    { from: 0.000526, to: 0,        width: 2380 },
+    { from: 0.000526, to: 0.000126, width: 1500 },
+    { from: 0.000126, to: 0,        width: 3000 },
   ];
   const yearCE = y => (2026 - y) / 1e6; // calendar year -> t
 
@@ -358,14 +361,23 @@
   const MAXPCT = 60;
   function isCompact() { return window.innerWidth < 700 || window.innerHeight < 560; }
   function layoutFor(compact) {
+    const vw = window.innerWidth, vh = window.innerHeight;
     const L = compact
-      ? { scale: 0.8, cardW: 172, cardH: 112, lanes: [8, 126, 244], chTop: 372, chBot: 500,
-          rib1: 506, ribH: 16, tickY: 548, zoomY: 580, height: 592, padL: 24, font: 9.5,
-          nowW: Math.max(290, Math.min(600, window.innerWidth - 64)) }
-      : { scale: 1, cardW: 208, cardH: 124, lanes: [10, 138, 266], chTop: 408, chBot: 590,
-          rib1: 598, ribH: 19, tickY: 648, zoomY: 686, height: 700, padL: 70, font: 10.5, nowW: 600 };
+      ? { scale: 1, cardW: Math.round(Math.min(280, Math.max(230, vw * 0.7))), chartH: 130, ribH: 16,
+          height: Math.round(Math.min(860, Math.max(600, vh - 16))), padL: 24, font: 9.5,
+          nowW: Math.max(290, Math.min(600, vw - 64)) }
+      : { scale: 1, cardW: 290, chartH: 180, ribH: 19,
+          height: Math.round(Math.min(900, Math.max(680, vh - 40))), padL: 70, font: 10.5, nowW: 600 };
+    // Stack the bottom block (zoom label, ticks, ribbons, chart) up from the bottom edge
+    L.zoomY = L.height - 12;
+    L.tickY = L.height - 46;
+    L.rib2 = L.tickY - 12 - L.ribH;
+    L.rib1 = L.rib2 - L.ribH - 1;
+    L.chBot = L.rib1 - 8;
+    L.chTop = L.chBot - L.chartH;
+    L.cardTop = 10;
+    L.cardBot = L.chTop - 34;
     L.compact = compact;
-    L.rib2 = L.rib1 + L.ribH + 1;
     let acc = L.padL;
     L.segments = BASE_SEGMENTS.map(s => {
       const w = Math.round(s.width * L.scale);
@@ -685,17 +697,52 @@
     canvas.appendChild(tip);
     tip.hidden = true;
 
-    // Card lanes
-    const laneEnd = L.lanes.map(() => -Infinity);
+    // Cards: build them first so we can measure their real height
     const sorted = [...EVENTS].sort((a, b) => b.t - a.t);
+    const areaH = L.cardBot - L.cardTop;
+    for (const e of sorted) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "card" + (e.big ? " big" : "");
+      b.style.width = L.cardW + "px";
+      b.style.left = "0px"; b.style.top = "0px";
+      b.style.setProperty("--cause", CAUSES[e.causes[0]].color);
+      b.innerHTML = `<span class="when"><span>${e.when}</span>${e.big ? `<b>BIG FIVE #${e.big}</b>` : ""}</span>
+        <span class="name">${e.name}</span>
+        ${e.loss ? `<span class="loss">${e.loss}</span>` : ""}
+        <span class="txt lostt"><i>What disappeared</i>${e.lost}</span>
+        <span class="txt why"><i>Why</i>${e.why}</span>
+        <span class="foot"><span class="chips">${chipsHTML(e.causes)}</span><span class="more">More ›</span></span>`;
+      b.addEventListener("click", () => openDrawer(e));
+      canvas.appendChild(b);
+      if (b.offsetHeight > areaH) b.classList.add("clip");
+      if (b.offsetHeight > areaH) b.classList.add("clip2");
+      e.el = b;
+      e.h = Math.min(b.offsetHeight, areaH);
+      if (b.offsetHeight > areaH) b.style.height = areaH + "px";
+    }
+    // Pack: each card goes as close to its date as possible, in the first vertical gap that fits
+    const placed = [];
+    const GAP = 10;
+    let prevLeft = -Infinity;
     for (const e of sorted) {
       const ex = x(e.t);
-      let best = 0;
-      for (let i = 0; i < L.lanes.length; i++) if (laneEnd[i] <= ex - 8) { best = i; break; } else if (laneEnd[i] < laneEnd[best]) best = i;
-      e.left = Math.max(ex - 14, laneEnd[best] + 10);
-      e.top = L.lanes[best];
-      laneEnd[best] = e.left + L.cardW;
+      // Centre the card on its date, but never before the previous card (keeps reading order)
+      let left = Math.max(L.padL - 14, ex - L.cardW / 2, prevLeft);
+      for (let guard = 0; guard < 4000; guard++) {
+        const over = placed.filter(r => r.left < left + L.cardW + GAP && r.left + r.w + GAP > left);
+        const tops = [L.cardTop, ...over.map(r => r.top + r.h + GAP)].sort((a, b) => a - b);
+        const top = tops.find(t => t + e.h <= L.cardBot &&
+          !over.some(r => r.top < t + e.h + GAP && r.top + r.h + GAP > t));
+        if (top !== undefined) { e.left = left; e.top = top; break; }
+        left += 12;
+      }
+      placed.push({ left: e.left, top: e.top, w: L.cardW, h: e.h });
+      prevLeft = e.left;
+      e.el.style.left = e.left + "px";
+      e.el.style.top = e.top + "px";
     }
+    const laneEnd = placed.map(r => r.left + r.w);
     NOW_X = Math.max(L.timelineEnd + (L.compact ? 60 : 120), Math.max(...laneEnd) + 40);
     TOTAL_W = NOW_X + L.nowW + (L.compact ? 24 : 60);
     phanX0 = x(541); phanX1 = x(2.58);
@@ -779,7 +826,8 @@
     for (const k of [100, 75, 50, 25]) TICKS.push([k / 1000, k + ",000"]);
     TICKS.push([0.0117, "11,700"]);
     for (const k of [10, 8, 6, 4, 2]) TICKS.push([k / 1000, k + ",000"]);
-    for (let yr = 1500; yr <= 2000; yr += 50) TICKS.push([yearCE(yr), yr + " CE"]);
+    for (let yr = 1500; yr <= 1900; yr += 50) TICKS.push([yearCE(yr), yr + " CE"]);
+    for (let yr = 1920; yr <= 2020; yr += 20) TICKS.push([yearCE(yr), String(yr)]);
     TICKS.push([0, "2026"]);
     for (const [t, lbl] of TICKS) {
       const xx = x(t);
@@ -787,7 +835,7 @@
       text(lbl, { x: xx, y: L.tickY + 13, fill: "#b3b9c3", "font-family": MONO, "font-size": L.font, "text-anchor": "middle" });
     }
 
-    // Cards + leaders
+    // Leader lines from each card down to its moment on the chart
     const leaders = el("g", {});
     const midY = (L.chTop + L.chBot) / 2;
     sorted.forEach(e => {
@@ -795,26 +843,12 @@
       const col = CAUSES[e.causes[0]].color;
       const inCurve = e.t <= 541 && e.t >= 2.58;
       const py = inCurve ? yPct(pctAt(e.t)) : midY - 10;
-      const lx = Math.min(Math.max(ex, e.left + 6), e.left + L.cardW - 6);
-      const bottom = e.top + L.cardH;
-      el("path", { d: `M${lx} ${bottom} L${lx} ${bottom + 8} L${ex} ${Math.min(bottom + 30, py - 4)} L${ex} ${py}`,
+      const lx = Math.min(Math.max(ex, e.left + 10), e.left + L.cardW - 10);
+      const bottom = e.top + e.h;
+      const rail = Math.min(L.chTop - 8, py - 6);
+      el("path", { d: `M${lx} ${bottom} L${lx} ${bottom + 6} L${ex} ${rail} L${ex} ${py}`,
         fill: "none", stroke: col, "stroke-width": 1.2, "stroke-opacity": 0.8 }, leaders);
       el("circle", { cx: ex, cy: py, r: e.big ? 6 : 4.5, fill: col, stroke: "#131a24", "stroke-width": 2 }, leaders);
-
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "card" + (e.big ? " big" : "");
-      b.style.left = e.left + "px";
-      b.style.top = e.top + "px";
-      b.style.width = L.cardW + "px";
-      b.style.height = L.cardH + "px";
-      b.style.setProperty("--cause", col);
-      b.innerHTML = `<span class="when"><span>${e.when}</span>${e.big ? `<b>BIG FIVE #${e.big}</b>` : ""}</span>
-        <span class="name">${e.name}</span>
-        <span class="lost">${e.loss ? e.loss : e.lost}</span>
-        <span class="chips">${chipsHTML(e.causes)}</span>`;
-      b.addEventListener("click", () => openDrawer(e));
-      canvas.appendChild(b);
     });
 
     // Now panel
@@ -960,7 +994,7 @@
 
   // Rebuild when the layout mode changes (e.g. rotating a phone), keeping the same moment in view
   let lastKey = "";
-  const layoutKey = () => isCompact() + ":" + (isCompact() ? Math.max(290, Math.min(600, window.innerWidth - 64)) : 0);
+  const layoutKey = () => isCompact() + ":" + window.innerWidth;
   function relayout() {
     const key = layoutKey();
     if (key === lastKey) { sync(); return; }
@@ -976,6 +1010,8 @@
   let rt = null;
   window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(relayout, 150); });
   relayout();
+  // Card heights depend on the web fonts, so lay out again once they arrive
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { lastKey = ""; relayout(); });
 
   // ---------- Drawer ----------
   const drawer = document.getElementById("drawer");
