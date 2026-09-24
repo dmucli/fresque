@@ -27,13 +27,14 @@
     --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
     --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   html, body { background: var(--ground); }
   body {
     color: var(--ink);
     font-family: var(--serif);
     font-size: 16px;
     line-height: 1.5;
-    padding-inline: 16px;
+    padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
     padding-block: 0 32px;
   }
   .wrap { max-width: 1400px; margin-inline: auto; }
@@ -48,7 +49,7 @@
   h1 {
     font-family: var(--display);
     font-weight: 800;
-    font-size: clamp(34px, 5vw, 56px);
+    font-size: clamp(28px, 8.5vw, 56px);
     line-height: 0.95;
     letter-spacing: 0.01em;
     text-transform: uppercase;
@@ -107,11 +108,20 @@
     cursor: grab; scrollbar-color: var(--hair-2) var(--surface);
   }
   .fresco.dragging { cursor: grabbing; user-select: none; }
+  .fresco-wrap { position: relative; }
   .canvas { position: relative; height: 700px; }
+  .yaxis {
+    position: absolute; left: 1px; width: 44px; pointer-events: none; z-index: 3;
+    background: linear-gradient(to right, var(--surface) 55%, transparent);
+  }
+  .yaxis span {
+    position: absolute; left: 6px; transform: translateY(-50%);
+    font: 500 10.5px/1 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums;
+  }
   .canvas > svg { position: absolute; inset: 0; display: block; }
 
   .card {
-    position: absolute; width: 208px; height: 124px;
+    position: absolute; width: 208px; height: 124px; -webkit-tap-highlight-color: transparent;
     box-sizing: border-box; padding: 8px 10px 8px 11px;
     background: var(--surface-2); color: var(--ink);
     border: 1px solid var(--hair-2); border-left: 3px solid var(--cause, var(--c-context));
@@ -144,14 +154,15 @@
 
   /* "Now" panel inside the fresco */
   .now {
-    position: absolute; top: 10px; width: 600px; bottom: 16px;
+    position: absolute; top: 10px; bottom: 16px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
     box-sizing: border-box; padding: 18px 20px; overflow: auto;
     background: #171f2b; border: 1px solid var(--c-humans); border-radius: 8px;
   }
   .now h2 { font: 800 30px/1 var(--display); text-transform: uppercase; margin: 0 0 6px; letter-spacing: 0.01em; }
   .now p { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
   .now .big-num { font: 800 36px/1 var(--display); color: var(--ink); white-space: nowrap; }
-  .now .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 8px 0 14px; }
+  .now .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 8px 0 14px; }
+  .now .eyebrow { font: 500 11px var(--mono); color: var(--ink-3); letter-spacing: .06em; margin-bottom: 6px; }
   .now .stats div { display: flex; flex-direction: column; gap: 2px; }
   .now .stats small { font: 11px/1.3 var(--mono); color: var(--ink-3); }
   .bars { display: grid; grid-template-columns: 150px minmax(0, 1fr) 42px; gap: 5px 10px; align-items: center; font-size: 13px; }
@@ -168,7 +179,9 @@
     padding: calc(20px + env(safe-area-inset-top, 0px)) 22px calc(24px + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box; overflow-y: auto;
     box-shadow: -12px 0 40px rgba(0,0,0,0.45);
+    overscroll-behavior: contain;
   }
+  .scrim { position: fixed; inset: 0; background: rgba(4, 7, 12, 0.55); z-index: 19; }
   .drawer .close {
     float: right; font: 500 12px var(--mono); background: var(--surface-2); color: var(--ink);
     border: 1px solid var(--hair-2); border-radius: 999px; padding: 6px 10px; cursor: pointer;
@@ -188,12 +201,42 @@
   .notes p { margin: 0; font-size: 14px; color: var(--ink-2); }
 
   @media (max-width: 760px) {
-    header.top { grid-template-columns: 1fr; }
-    .legend { justify-content: flex-start; }
-    .now { width: 420px; }
-    .now .stats { grid-template-columns: 1fr 1fr; }
-    .bars { grid-template-columns: 110px minmax(0, 1fr) 40px; }
+    header.top { grid-template-columns: 1fr; padding-block: 14px 8px; }
+    .legend { justify-content: flex-start; max-width: none; gap: 4px 12px; }
+    .lede { font-size: 14.5px; }
+    /* Jump buttons become one swipeable row */
+    .nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav button { flex: none; }
+    .nav .label { display: none; }
+    .mm-caption .mid { display: none; }
   }
+  @media (max-width: 600px) {
+    /* Detail panel slides up from the bottom like an iOS sheet */
+    .drawer {
+      top: auto; left: 0; width: 100%; max-height: 82%;
+      border-left: 0; border-top: 1px solid var(--hair-2); border-radius: 14px 14px 0 0;
+      box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
+      padding: 16px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+    }
+    .drawer h2 { font-size: 28px; }
+    .drawer .loss { font-size: 21px; }
+    .drawer p { font-size: 15px; }
+  }
+  @media (pointer: coarse) {
+    .nav button { padding: 10px 13px; }
+    .drawer .close { padding: 9px 13px; }
+  }
+  .compact .card { padding: 7px 8px 7px 9px; }
+  .compact .card .name { font-size: 16px; }
+  .compact .card .lost { font-size: 11.5px; }
+  .compact .card .when { font-size: 10px; }
+  .compact .now { padding: 14px 14px; }
+  .compact .now h2 { font-size: 24px; }
+  .compact .now p { font-size: 13.5px; }
+  .compact .now .big-num { font-size: 28px; }
+  .compact .bars { grid-template-columns: 100px minmax(0, 1fr) 36px; font-size: 12px; gap: 5px 8px; }
+  .compact .yaxis span { font-size: 9.5px; }
   @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 </style>
 
@@ -201,7 +244,7 @@
   <header class="top">
     <div>
       <h1>The Extinction Fresco</h1>
-      <p class="lede">4.6 billion years of life and loss, from the birth of the Earth to this year. Scroll sideways, drag, or use the buttons. Click any panel to learn what disappeared and why.</p>
+      <p class="lede">4.6 billion years of life and loss, from the birth of the Earth to this year. Swipe or scroll sideways, or use the buttons. Tap any panel to learn what disappeared and why.</p>
     </div>
     <div class="legend" aria-label="Causes">
       <span><i class="dot" style="background:var(--c-impact)"></i>Asteroid impact</span>
@@ -231,12 +274,15 @@
     <svg id="mm-svg" preserveAspectRatio="none"></svg>
     <div class="mm-view" id="mm-view"></div>
   </div>
-  <div class="mm-caption"><span>4.6 billion years ago</span><span>Overview: the scale stretches as we get closer to today</span><span>2026</span></div>
+  <div class="mm-caption"><span>4.6 billion years ago</span><span class="mid">Overview: the scale stretches as we get closer to today</span><span>2026</span></div>
 
-  <div class="fresco" id="fresco" tabindex="0" aria-label="Scrollable timeline of extinctions">
-    <div class="canvas" id="canvas">
-      <svg id="svg" aria-hidden="true"></svg>
+  <div class="fresco-wrap">
+    <div class="fresco" id="fresco" tabindex="0" aria-label="Scrollable timeline of extinctions">
+      <div class="canvas" id="canvas">
+        <svg id="svg" aria-hidden="true"></svg>
+      </div>
     </div>
+    <div class="yaxis" id="yaxis" aria-hidden="true" hidden></div>
   </div>
 
   <section class="notes">
@@ -255,6 +301,7 @@
   </section>
 </div>
 
+<div class="scrim" id="scrim" hidden></div>
 <aside class="drawer" id="drawer" hidden aria-live="polite" aria-labelledby="d-title">
   <button type="button" class="close" id="d-close">Close ✕</button>
   <div class="when" id="d-when"></div>
@@ -280,33 +327,17 @@
     context:   { label: "Milestone",              color: "var(--c-context)" },
   };
 
-  // ---------- Piecewise time scale (t = millions of years before 2026) ----------
-  const PAD_L = 70;
-  const SEGMENTS = [
-    { from: 4600,   to: 541,     width: 3650, note: "1 pixel ≈ 1.1 million years" },
-    { from: 541,    to: 2.58,    width: 6460, note: "1 pixel ≈ 83,000 years" },
-    { from: 2.58,   to: 0.13,    width: 520,  note: "1 pixel ≈ 4,700 years" },
-    { from: 0.13,   to: 0.0117,  width: 1180, note: "1 pixel ≈ 100 years" },
-    { from: 0.0117, to: 0.000526,width: 1120, note: "1 pixel ≈ 10 years" },
-    { from: 0.000526, to: 0,     width: 2380, note: "1 pixel ≈ 2.5 months" },
-  ];
-  let acc = PAD_L;
-  for (const s of SEGMENTS) { s.x0 = acc; acc += s.width; s.x1 = acc; }
-  const TIMELINE_END = acc;
-  const NOW_W = 600;
 
-  function x(t) {
-    for (const s of SEGMENTS) {
-      if (t <= s.from && t >= s.to) return s.x0 + (s.from - t) / (s.from - s.to) * s.width;
-    }
-    return t > SEGMENTS[0].from ? PAD_L : TIMELINE_END;
-  }
-  function tAt(px) {
-    for (const s of SEGMENTS) {
-      if (px >= s.x0 && px <= s.x1) return s.from - (px - s.x0) / s.width * (s.from - s.to);
-    }
-    return null;
-  }
+  // ---------- Piecewise time scale (t = millions of years before 2026) ----------
+  // Widths are for desktop; small screens scale them down (see layoutFor).
+  const BASE_SEGMENTS = [
+    { from: 4600,     to: 541,      width: 3650 },
+    { from: 541,      to: 2.58,     width: 6460 },
+    { from: 2.58,     to: 0.13,     width: 520 },
+    { from: 0.13,     to: 0.0117,   width: 1180 },
+    { from: 0.0117,   to: 0.000526, width: 1120 },
+    { from: 0.000526, to: 0,        width: 2380 },
+  ];
   const yearCE = y => (2026 - y) / 1e6; // calendar year -> t
 
   function fmtAge(t) {
@@ -315,15 +346,52 @@
     if (t >= 0.000526) return Math.round(t * 1e6).toLocaleString("en") + " years ago";
     return "year " + Math.round(2026 - t * 1e6);
   }
+  function fmtPerPx(years) {
+    if (years >= 1e6) return (Math.round(years / 1e5) / 10) + " million years";
+    if (years >= 1000) return (Math.round(years / 100) * 100).toLocaleString("en") + " years";
+    if (years >= 10) return Math.round(years) + " years";
+    if (years >= 1) return (Math.round(years * 10) / 10) + " years";
+    return Math.round(years * 12) + " months";
+  }
 
-  // ---------- Layout constants (vertical) ----------
-  const LANES = [10, 138, 266];
-  const CARD_W = 208, CARD_H = 124;
-  const CH_TOP = 408, CH_BOT = 590;         // chart area
+  // ---------- Layout: desktop or compact (phones) ----------
   const MAXPCT = 60;
-  const yPct = p => CH_BOT - p / MAXPCT * (CH_BOT - CH_TOP);
-  const RIB1 = 598, RIB2 = 618, RIB_H = 19; // eon + period ribbons
-  const TICK_Y = 648;
+  function isCompact() { return window.innerWidth < 700 || window.innerHeight < 560; }
+  function layoutFor(compact) {
+    const L = compact
+      ? { scale: 0.8, cardW: 172, cardH: 112, lanes: [8, 126, 244], chTop: 372, chBot: 500,
+          rib1: 506, ribH: 16, tickY: 548, zoomY: 580, height: 592, padL: 24, font: 9.5,
+          nowW: Math.max(290, Math.min(600, window.innerWidth - 64)) }
+      : { scale: 1, cardW: 208, cardH: 124, lanes: [10, 138, 266], chTop: 408, chBot: 590,
+          rib1: 598, ribH: 19, tickY: 648, zoomY: 686, height: 700, padL: 70, font: 10.5, nowW: 600 };
+    L.compact = compact;
+    L.rib2 = L.rib1 + L.ribH + 1;
+    let acc = L.padL;
+    L.segments = BASE_SEGMENTS.map(s => {
+      const w = Math.round(s.width * L.scale);
+      const seg = { ...s, width: w, x0: acc, x1: acc + w };
+      seg.note = "1 pixel ≈ " + fmtPerPx((s.from - s.to) * 1e6 / w);
+      acc += w;
+      return seg;
+    });
+    L.timelineEnd = acc;
+    return L;
+  }
+
+  let L = null; // current layout
+  function x(t) {
+    for (const s of L.segments) {
+      if (t <= s.from && t >= s.to) return s.x0 + (s.from - t) / (s.from - s.to) * s.width;
+    }
+    return t > L.segments[0].from ? L.padL : L.timelineEnd;
+  }
+  function tAt(px) {
+    for (const s of L.segments) {
+      if (px >= s.x0 && px <= s.x1) return s.from - (px - s.x0) / s.width * (s.from - s.to);
+    }
+    return null;
+  }
+  const yPct = p => L.chBot - p / MAXPCT * (L.chBot - L.chTop);
 
   // ---------- Extinction intensity (approximate % of marine genera lost per stage) ----------
   // [end of stage in Ma, % genera, stage name]
@@ -360,6 +428,7 @@
     }
     return null;
   }
+
 
   // ---------- Events ----------
   // t = start (Ma before 2026); span = optional end; causes; big = Big Five number
@@ -553,21 +622,6 @@
       after: "Scientists are trying IVF with stored cells and southern white rhino surrogate mothers." },
   ];
 
-
-  // ---------- Card layout (lanes), computed before drawing ----------
-  const laneEnd = LANES.map(() => -Infinity);
-  const sorted = [...EVENTS].sort((a, b) => b.t - a.t);
-  for (const e of sorted) {
-    const ex = x(e.t);
-    let best = 0;
-    for (let i = 0; i < LANES.length; i++) if (laneEnd[i] <= ex - 8) { best = i; break; } else if (laneEnd[i] < laneEnd[best]) best = i;
-    e.left = Math.max(ex - 14, laneEnd[best] + 10);
-    e.top = LANES[best];
-    laneEnd[best] = e.left + CARD_W;
-  }
-  const NOW_X = Math.max(TIMELINE_END + 120, Math.max(...laneEnd) + 48);
-  const TOTAL_W = NOW_X + NOW_W + 60;
-
   // ---------- Geological ribbons (ICS colours) ----------
   const EONS = [
     ["Hadean", 4600, 4031, "#AE027E"], ["Archean", 4031, 2500, "#F0047F"], ["Proterozoic", 2500, 538.8, "#F73563"],
@@ -584,14 +638,23 @@
     ["Pleistocene", 2.58, 0.0117, "#FFF2AE"], ["Holocene", 0.0117, 0, "#FEF2E0"],
   ];
 
-  // ---------- Build SVG ----------
+
+  const GROUPS = [
+    ["Cycads", 69], ["Reef-building corals", 44], ["Amphibians", 41], ["Sharks & rays", 37],
+    ["Conifers", 34], ["Mammals", 26], ["Reptiles", 21], ["Birds", 12],
+  ];
+
+  // ---------- DOM refs + helpers ----------
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.getElementById("svg");
   const canvas = document.getElementById("canvas");
-  canvas.style.width = TOTAL_W + "px";
-  svg.setAttribute("width", TOTAL_W);
-  svg.setAttribute("height", 700);
-  svg.setAttribute("viewBox", `0 0 ${TOTAL_W} 700`);
+  const fresco = document.getElementById("fresco");
+  const yaxis = document.getElementById("yaxis");
+  const mm = document.getElementById("minimap");
+  const mmSvg = document.getElementById("mm-svg");
+  const mmView = document.getElementById("mm-view");
+  const tip = document.createElement("div");
+  tip.className = "tip"; tip.hidden = true;
 
   function el(tag, attrs, parent = svg) {
     const n = document.createElementNS(NS, tag);
@@ -606,159 +669,195 @@
       .map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
     return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.25 ? "#111418" : "#ffffff";
   }
+  const MONO = "IBM Plex Mono, ui-monospace, Menlo, monospace";
+  const chipsHTML = causes => causes.map(c => `<span class="chip"><i class="dot" style="background:${CAUSES[c].color}"></i>${CAUSES[c].label}</span>`).join("");
 
-  const defs = el("defs", {});
-  const pat = el("pattern", { id: "hatch", width: 8, height: 8, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
-  el("line", { x1: 0, y1: 0, x2: 0, y2: 8, stroke: "#243040", "stroke-width": 2 }, pat);
+  let TOTAL_W = 0, NOW_X = 0, phanX0 = 0, phanX1 = 0;
+  let cross = null, crossDot = null;
 
-  // Unmeasured zones
-  const phanX0 = x(541), phanX1 = x(2.58);
-  const unmeasured = [[PAD_L, phanX0, "Too early to count", "Life was mostly microscopic and left few fossils. Events are shown, but no percentage."],
-                      [phanX1, TIMELINE_END, "Counted species by species", "Here we know individual species that vanished, not fossil percentages."]];
-  for (const [a, b, t1, t2] of unmeasured) {
-    el("rect", { x: a, y: CH_TOP, width: b - a, height: CH_BOT - CH_TOP, fill: "url(#hatch)" });
-    const step = 1400;
-    for (let cx = a + 30; cx < b - 300; cx += step) {
-      text(t1, { x: cx, y: CH_BOT - 34, fill: "#7f8793", "font-family": "IBM Plex Mono, monospace", "font-size": 11, "letter-spacing": "0.06em" }).textContent = t1.toUpperCase();
-      text(t2, { x: cx, y: CH_BOT - 18, fill: "#7f8793", "font-family": "Source Serif 4, Georgia, serif", "font-size": 12.5, "font-style": "italic" });
+  // ---------- Build everything for the current layout ----------
+  function build() {
+    L = layoutFor(isCompact());
+    document.documentElement.classList.toggle("compact", L.compact);
+    svg.replaceChildren();
+    mmSvg.replaceChildren();
+    canvas.querySelectorAll(".card, .now").forEach(n => n.remove());
+    canvas.appendChild(tip);
+    tip.hidden = true;
+
+    // Card lanes
+    const laneEnd = L.lanes.map(() => -Infinity);
+    const sorted = [...EVENTS].sort((a, b) => b.t - a.t);
+    for (const e of sorted) {
+      const ex = x(e.t);
+      let best = 0;
+      for (let i = 0; i < L.lanes.length; i++) if (laneEnd[i] <= ex - 8) { best = i; break; } else if (laneEnd[i] < laneEnd[best]) best = i;
+      e.left = Math.max(ex - 14, laneEnd[best] + 10);
+      e.top = L.lanes[best];
+      laneEnd[best] = e.left + L.cardW;
     }
-  }
+    NOW_X = Math.max(L.timelineEnd + (L.compact ? 60 : 120), Math.max(...laneEnd) + 40);
+    TOTAL_W = NOW_X + L.nowW + (L.compact ? 24 : 60);
+    phanX0 = x(541); phanX1 = x(2.58);
 
-  // Gridlines + y labels for the measured zone
-  for (const p of [0, 10, 20, 30, 40, 50, 60]) {
-    const yy = yPct(p);
-    el("line", { x1: phanX0, x2: phanX1, y1: yy, y2: yy, stroke: p === 0 ? "#3a4a60" : "#1f2a38", "stroke-width": 1 });
-    for (let gx = phanX0 + 6; gx < phanX1 - 200; gx += 1100) {
-      text(p + "%", { x: gx, y: yy - 4, fill: "#7f8793", "font-family": "IBM Plex Mono, monospace", "font-size": 10.5 });
-    }
-  }
-  text("% OF MARINE GENERA LOST PER STAGE (APPROX.)", { x: phanX0 + 44, y: CH_TOP - 6, fill: "#b3b9c3", "font-family": "IBM Plex Mono, monospace", "font-size": 10.5, "letter-spacing": "0.06em" });
+    canvas.style.width = TOTAL_W + "px";
+    canvas.style.height = L.height + "px";
+    svg.setAttribute("width", TOTAL_W);
+    svg.setAttribute("height", L.height);
+    svg.setAttribute("viewBox", `0 0 ${TOTAL_W} ${L.height}`);
 
-  // Event span bands (behind curve)
-  for (const e of EVENTS) {
-    if (e.span === undefined) continue;
-    const a = x(e.t), b = x(e.span);
-    if (b - a < 2) continue;
-    const c = CAUSES[e.causes[0]].color;
-    el("rect", { x: a, y: CH_TOP, width: b - a, height: CH_BOT - CH_TOP, fill: c, "fill-opacity": 0.13 });
-  }
+    const defs = el("defs", {});
+    const pat = el("pattern", { id: "hatch", width: 8, height: 8, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+    el("line", { x1: 0, y1: 0, x2: 0, y2: 8, stroke: "#243040", "stroke-width": 2 }, pat);
 
-  // Curve (smooth-ish: straight segments between stage ends, then area)
-  const pts = SERIES.map(([t, p]) => [x(t), yPct(p)]);
-  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
-  el("path", { d: line + ` L${pts[pts.length - 1][0]} ${CH_BOT} L${pts[0][0]} ${CH_BOT} Z`, fill: "rgba(232,217,184,0.14)" });
-  el("path", { d: line, fill: "none", stroke: "#e8d9b8", "stroke-width": 2, "stroke-linejoin": "round" });
-
-  // Segment scale breaks
-  SEGMENTS.forEach((s, i) => {
-    if (i > 0) el("line", { x1: s.x0, x2: s.x0, y1: 4, y2: TICK_Y + 26, stroke: "#4a5a70", "stroke-dasharray": "3 5", "stroke-width": 1 });
-    text("ZOOM " + (i + 1) + " · " + s.note, { x: s.x0 + 10, y: 686, fill: "#b3b9c3", "font-family": "IBM Plex Mono, monospace", "font-size": 10.5, "letter-spacing": "0.04em" });
-  });
-
-  // Ribbons
-  function ribbon(rows, y) {
-    for (const [name, a, b, col] of rows) {
-      const xa = x(Math.min(a, 4600)), xb = x(b);
-      if (xb - xa <= 0) continue;
-      el("rect", { x: xa, y, width: xb - xa - 1, height: RIB_H, fill: col });
-      const ink = inkFor(col);
-      const w = xb - xa;
-      const lbl = name.length * 7.2 + 12;
-      if (w < lbl) continue;
-      const repeat = Math.max(1, Math.floor(w / 1500));
-      for (let r = 0; r < repeat; r++) {
-        const cx = xa + (w / repeat) * r + 8;
-        text(name.toUpperCase(), { x: cx, y: y + 13.5, fill: ink, "font-family": "IBM Plex Mono, monospace", "font-size": 10.5, "font-weight": 500, "letter-spacing": "0.06em" });
+    // Unmeasured zones
+    const unmeasured = [[L.padL, phanX0, "Too early to count", "Life was mostly microscopic. Events shown, no percentage."],
+                        [phanX1, L.timelineEnd, "Counted species by species", "Here we know single species, not fossil percentages."]];
+    for (const [a, b, t1, t2] of unmeasured) {
+      el("rect", { x: a, y: L.chTop, width: b - a, height: L.chBot - L.chTop, fill: "url(#hatch)" });
+      const step = L.compact ? 700 : 1400;
+      for (let cx = a + 24; cx < b - 280; cx += step) {
+        text(t1.toUpperCase(), { x: cx, y: L.chBot - 30, fill: "#7f8793", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.06em" });
+        text(t2, { x: cx, y: L.chBot - 14, fill: "#7f8793", "font-family": "Source Serif 4, Georgia, serif", "font-size": L.compact ? 11.5 : 12.5, "font-style": "italic" });
       }
     }
+
+    // Gridlines for the measured zone (labels live in the sticky y-axis)
+    for (const p of [0, 10, 20, 30, 40, 50, 60]) {
+      const yy = yPct(p);
+      el("line", { x1: phanX0, x2: phanX1, y1: yy, y2: yy, stroke: p === 0 ? "#3a4a60" : "#1f2a38", "stroke-width": 1 });
+    }
+    for (let gx = phanX0 + 44; gx < phanX1 - 400; gx += L.compact ? 900 : 1800) {
+      text("% OF MARINE GENERA LOST PER STAGE (APPROX.)", { x: gx, y: L.chTop - 6, fill: "#b3b9c3", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.06em" });
+    }
+
+    // Event span bands
+    for (const e of EVENTS) {
+      if (e.span === undefined) continue;
+      const a = x(e.t), b = x(e.span);
+      if (b - a < 2) continue;
+      el("rect", { x: a, y: L.chTop, width: b - a, height: L.chBot - L.chTop, fill: CAUSES[e.causes[0]].color, "fill-opacity": 0.13 });
+    }
+
+    // Curve
+    const pts = SERIES.map(([t, p]) => [x(t), yPct(p)]);
+    const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+    el("path", { d: line + ` L${pts[pts.length - 1][0]} ${L.chBot} L${pts[0][0]} ${L.chBot} Z`, fill: "rgba(232,217,184,0.14)" });
+    el("path", { d: line, fill: "none", stroke: "#e8d9b8", "stroke-width": 2, "stroke-linejoin": "round" });
+
+    // Scale breaks
+    L.segments.forEach((s, i) => {
+      if (i > 0) el("line", { x1: s.x0, x2: s.x0, y1: 4, y2: L.tickY + 22, stroke: "#4a5a70", "stroke-dasharray": "3 5", "stroke-width": 1 });
+      text("ZOOM " + (i + 1) + " · " + s.note, { x: s.x0 + 10, y: L.zoomY, fill: "#b3b9c3", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.04em" });
+    });
+
+    // Ribbons
+    const charW = L.font * 0.69;
+    function ribbon(rows, y) {
+      for (const [name, a, b, col] of rows) {
+        const xa = x(Math.min(a, 4600)), xb = x(b);
+        if (xb - xa <= 0) continue;
+        el("rect", { x: xa, y, width: xb - xa - 1, height: L.ribH, fill: col });
+        const w = xb - xa;
+        if (w < name.length * charW + 12) continue;
+        const repeat = Math.max(1, Math.floor(w / (L.compact ? 800 : 1500)));
+        for (let r = 0; r < repeat; r++) {
+          text(name.toUpperCase(), { x: xa + (w / repeat) * r + 8, y: y + L.ribH - 5, fill: inkFor(col), "font-family": MONO, "font-size": L.font, "font-weight": 500, "letter-spacing": "0.06em" });
+        }
+      }
+    }
+    ribbon(EONS, L.rib1);
+    ribbon(PERIODS, L.rib2);
+
+    // Ticks
+    const TICKS = [];
+    for (let t = 4500; t >= 1000; t -= 500) TICKS.push([t, (t / 1000) + " bn"]);
+    TICKS.push([541, "541 My"]);
+    for (let t = 500; t >= 50; t -= 50) TICKS.push([t, t + " My"]);
+    TICKS.push([25, "25 My"], [2.58, "2.6 My"]);
+    TICKS.push([2, "2 My"], [1, "1 My"], [0.5, "500,000"]);
+    for (const k of [100, 75, 50, 25]) TICKS.push([k / 1000, k + ",000"]);
+    TICKS.push([0.0117, "11,700"]);
+    for (const k of [10, 8, 6, 4, 2]) TICKS.push([k / 1000, k + ",000"]);
+    for (let yr = 1500; yr <= 2000; yr += 50) TICKS.push([yearCE(yr), yr + " CE"]);
+    TICKS.push([0, "2026"]);
+    for (const [t, lbl] of TICKS) {
+      const xx = x(t);
+      el("line", { x1: xx, x2: xx, y1: L.tickY - 6, y2: L.tickY, stroke: "#4a5a70" });
+      text(lbl, { x: xx, y: L.tickY + 13, fill: "#b3b9c3", "font-family": MONO, "font-size": L.font, "text-anchor": "middle" });
+    }
+
+    // Cards + leaders
+    const leaders = el("g", {});
+    const midY = (L.chTop + L.chBot) / 2;
+    sorted.forEach(e => {
+      const ex = x(e.t);
+      const col = CAUSES[e.causes[0]].color;
+      const inCurve = e.t <= 541 && e.t >= 2.58;
+      const py = inCurve ? yPct(pctAt(e.t)) : midY - 10;
+      const lx = Math.min(Math.max(ex, e.left + 6), e.left + L.cardW - 6);
+      const bottom = e.top + L.cardH;
+      el("path", { d: `M${lx} ${bottom} L${lx} ${bottom + 8} L${ex} ${Math.min(bottom + 30, py - 4)} L${ex} ${py}`,
+        fill: "none", stroke: col, "stroke-width": 1.2, "stroke-opacity": 0.8 }, leaders);
+      el("circle", { cx: ex, cy: py, r: e.big ? 6 : 4.5, fill: col, stroke: "#131a24", "stroke-width": 2 }, leaders);
+
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "card" + (e.big ? " big" : "");
+      b.style.left = e.left + "px";
+      b.style.top = e.top + "px";
+      b.style.width = L.cardW + "px";
+      b.style.height = L.cardH + "px";
+      b.style.setProperty("--cause", col);
+      b.innerHTML = `<span class="when"><span>${e.when}</span>${e.big ? `<b>BIG FIVE #${e.big}</b>` : ""}</span>
+        <span class="name">${e.name}</span>
+        <span class="lost">${e.loss ? e.loss : e.lost}</span>
+        <span class="chips">${chipsHTML(e.causes)}</span>`;
+      b.addEventListener("click", () => openDrawer(e));
+      canvas.appendChild(b);
+    });
+
+    // Now panel
+    const now = document.createElement("section");
+    now.className = "now";
+    now.style.left = NOW_X + "px";
+    now.style.width = L.nowW + "px";
+    now.innerHTML = `
+      <div class="eyebrow">TODAY · 2026</div>
+      <h2>Species in danger now</h2>
+      <p>Scientists debate whether we are entering a sixth mass extinction. The Big Five each killed about three-quarters of all species. We are far from that total, but the speed is alarming: vertebrates are now vanishing up to 100 times faster than the natural background rate.</p>
+      <div class="stats">
+        <div><span class="big-num">46,000+</span><small>species on the IUCN Red List are threatened (about 28% of those assessed)</small></div>
+        <div><span class="big-num">~900</span><small>species recorded as extinct since 1500 CE</small></div>
+        <div><span class="big-num">~1 million</span><small>species at risk worldwide, estimated by IPBES (2019)</small></div>
+      </div>
+      <div class="eyebrow">SHARE OF ASSESSED SPECIES THREATENED, BY GROUP</div>
+      <div class="bars">${GROUPS.map(([g, v]) => `<span class="lbl">${g}</span><span class="track" title="${g}: ${v}% threatened"><span class="fill" style="width:${v}%"></span></span><span class="val">${v}%</span>`).join("")}</div>
+      <p style="margin-top:12px">The main causes today: habitat loss (farming, logging, cities), overhunting and overfishing, invasive species, pollution, and climate change. Unlike the asteroid, these are choices, and every one of them can be slowed.</p>
+      <div class="src">Sources: IUCN Red List 2024; IPBES Global Assessment 2019; Ceballos et al., Science Advances 2015. Figures rounded.</div>`;
+    canvas.appendChild(now);
+    el("line", { x1: L.timelineEnd, x2: NOW_X, y1: midY, y2: midY, stroke: "#d55181", "stroke-dasharray": "2 4" });
+
+    // Hover / tap on the curve
+    cross = el("line", { y1: L.chTop, y2: L.chBot, stroke: "#e8d9b8", "stroke-width": 1, "stroke-opacity": 0.5, visibility: "hidden" });
+    crossDot = el("circle", { r: 5, fill: "#e8d9b8", stroke: "#131a24", "stroke-width": 2, visibility: "hidden" });
+    const hit = el("rect", { x: phanX0, y: L.chTop - 10, width: phanX1 - phanX0, height: L.chBot - L.chTop + 10, fill: "transparent" });
+    hit.addEventListener("pointermove", showTip);
+    hit.addEventListener("pointerdown", showTip);
+    hit.addEventListener("pointerleave", ev => { if (ev.pointerType === "mouse") hideTip(); });
+
+    // Sticky y-axis labels
+    yaxis.style.top = (L.chTop + 1) + "px";
+    yaxis.style.height = (L.chBot - L.chTop) + "px";
+    yaxis.innerHTML = [10, 20, 30, 40, 50, 60].map(p => `<span style="top:${yPct(p) - L.chTop}px">${p}%</span>`).join("");
+
+    buildMinimap();
   }
-  ribbon(EONS, RIB1);
-  ribbon(PERIODS, RIB2);
 
-  // Ticks
-  const TICKS = [];
-  for (let t = 4500; t >= 1000; t -= 500) TICKS.push([t, (t / 1000) + " bn"]);
-  TICKS.push([541, "541 My"]);
-  for (let t = 500; t >= 50; t -= 50) TICKS.push([t, t + " My"]);
-  TICKS.push([25, "25 My"], [2.58, "2.6 My"]);
-  TICKS.push([2, "2 My"], [1, "1 My"], [0.5, "500,000"]);
-  for (const k of [100, 75, 50, 25]) TICKS.push([k / 1000, k + ",000"]);
-  TICKS.push([0.0117, "11,700"]);
-  for (const k of [10, 8, 6, 4, 2]) TICKS.push([k / 1000, k + ",000"]);
-  for (let yr = 1500; yr <= 2000; yr += 50) TICKS.push([yearCE(yr), yr + " CE"]);
-  TICKS.push([0, "2026"]);
-  for (const [t, lbl] of TICKS) {
-    const xx = x(t);
-    el("line", { x1: xx, x2: xx, y1: TICK_Y - 6, y2: TICK_Y, stroke: "#4a5a70" });
-    text(lbl, { x: xx, y: TICK_Y + 13, fill: "#b3b9c3", "font-family": "IBM Plex Mono, monospace", "font-size": 10.5, "text-anchor": "middle" });
-  }
-  text("years ago →", { x: PAD_L - 60, y: TICK_Y + 13, fill: "#7f8793", "font-family": "IBM Plex Mono, monospace", "font-size": 10 });
-
-  // ---------- Cards + leaders ----------
-  const leaders = el("g", {});
-  sorted.forEach(e => {
-    const ex = x(e.t);
-    const left = e.left, top = e.top;
-
-    const col = CAUSES[e.causes[0]].color;
-    const inCurve = e.t <= 541 && e.t >= 2.58;
-    const py = inCurve ? yPct(pctAt(e.t)) : (CH_TOP + CH_BOT) / 2 - 10;
-    const lx = Math.min(Math.max(ex, left + 6), left + CARD_W - 6);
-    el("path", { d: `M${lx} ${top + CARD_H} L${lx} ${top + CARD_H + 8} L${ex} ${Math.min(top + CARD_H + 30, py - 4)} L${ex} ${py}`,
-      fill: "none", stroke: col, "stroke-width": 1.2, "stroke-opacity": 0.8 }, leaders);
-    el("circle", { cx: ex, cy: py, r: e.big ? 6 : 4.5, fill: col, stroke: "#131a24", "stroke-width": 2 }, leaders);
-
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "card" + (e.big ? " big" : "");
-    b.style.left = left + "px";
-    b.style.top = top + "px";
-    b.style.setProperty("--cause", col);
-    b.innerHTML = `<span class="when"><span>${e.when}</span>${e.big ? `<b>BIG FIVE #${e.big}</b>` : ""}</span>
-      <span class="name">${e.name}</span>
-      <span class="lost">${e.loss ? e.loss : e.lost}</span>
-      <span class="chips">${e.causes.map(c => `<span class="chip"><i class="dot" style="background:${CAUSES[c].color}"></i>${CAUSES[c].label}</span>`).join("")}</span>`;
-    b.addEventListener("click", () => openDrawer(e));
-    canvas.appendChild(b);
-  });
-
-  // ---------- Now panel ----------
-  const GROUPS = [
-    ["Cycads", 69], ["Reef-building corals", 44], ["Amphibians", 41], ["Sharks & rays", 37],
-    ["Conifers", 34], ["Mammals", 26], ["Reptiles", 21], ["Birds", 12],
-  ];
-  const now = document.createElement("section");
-  now.className = "now";
-  now.id = "now";
-  now.style.left = NOW_X + "px";
-  now.innerHTML = `
-    <div class="when" style="font:500 11px var(--mono);color:var(--ink-3);letter-spacing:.06em">TODAY · 2026</div>
-    <h2>Species in danger now</h2>
-    <p>Scientists debate whether we are entering a sixth mass extinction. The Big Five each killed about three-quarters of all species. We are far from that total, but the speed is alarming: vertebrates are now vanishing up to 100 times faster than the natural background rate.</p>
-    <div class="stats">
-      <div><span class="big-num">46,000+</span><small>species on the IUCN Red List are threatened (about 28% of those assessed)</small></div>
-      <div><span class="big-num">~900</span><small>species recorded as extinct since 1500 CE</small></div>
-      <div><span class="big-num">~1 million</span><small>species at risk worldwide, estimated by IPBES (2019)</small></div>
-    </div>
-    <div style="font:500 11px var(--mono);color:var(--ink-3);letter-spacing:.06em;margin-bottom:6px">SHARE OF ASSESSED SPECIES THREATENED, BY GROUP</div>
-    <div class="bars">${GROUPS.map(([g, v]) => `<span class="lbl">${g}</span><span class="track" title="${g}: ${v}% threatened"><span class="fill" style="width:${v}%"></span></span><span class="val">${v}%</span>`).join("")}</div>
-    <p style="margin-top:12px">The main causes today: habitat loss (farming, logging, cities), overhunting and overfishing, invasive species, pollution, and climate change. Unlike the asteroid, these are choices, and every one of them can be slowed.</p>
-    <div class="src">Sources: IUCN Red List 2024; IPBES Global Assessment 2019; Ceballos et al., Science Advances 2015. Figures rounded.</div>`;
-  canvas.appendChild(now);
-  el("line", { x1: TIMELINE_END, x2: NOW_X, y1: (CH_TOP + CH_BOT) / 2, y2: (CH_TOP + CH_BOT) / 2, stroke: "#d55181", "stroke-dasharray": "2 4" });
-
-  // ---------- Hover tooltip on the curve ----------
-  const tip = document.createElement("div");
-  tip.className = "tip"; tip.hidden = true;
-  canvas.appendChild(tip);
-  const cross = el("line", { y1: CH_TOP, y2: CH_BOT, stroke: "#e8d9b8", "stroke-width": 1, "stroke-opacity": 0.5, visibility: "hidden" });
-  const crossDot = el("circle", { r: 5, fill: "#e8d9b8", stroke: "#131a24", "stroke-width": 2, visibility: "hidden" });
-  const hit = el("rect", { x: phanX0, y: CH_TOP - 10, width: phanX1 - phanX0, height: CH_BOT - CH_TOP + 10, fill: "transparent" });
-  hit.addEventListener("pointermove", ev => {
+  function showTip(ev) {
     const r = canvas.getBoundingClientRect();
     const px = ev.clientX - r.left;
-    const t = tAt(px);
-    if (t === null) return;
+    if (tAt(px) === null) return;
     let bestI = 0, bestD = Infinity;
     SERIES.forEach(([st], i) => { const d = Math.abs(x(st) - px); if (d < bestD) { bestD = d; bestI = i; } });
     const [st, sp, name] = SERIES[bestI];
@@ -767,16 +866,51 @@
     crossDot.setAttribute("cx", sx); crossDot.setAttribute("cy", sy); crossDot.setAttribute("visibility", "visible");
     tip.innerHTML = `<b>${name}</b><br>ends ${fmtAge(st)}<br>~${sp}% of marine genera lost<br><span class="muted">approximate</span>`;
     tip.hidden = false;
-    const tx = sx + 14 + 240 > TOTAL_W ? sx - 254 : sx + 14;
-    tip.style.left = tx + "px";
-    tip.style.top = (CH_TOP + 8) + "px";
-  });
-  hit.addEventListener("pointerleave", () => {
-    tip.hidden = true; cross.setAttribute("visibility", "hidden"); crossDot.setAttribute("visibility", "hidden");
-  });
+    const tw = tip.offsetWidth;
+    const minX = fresco.scrollLeft + 8, maxX = fresco.scrollLeft + fresco.clientWidth - tw - 8;
+    let tx = sx + 14 > maxX ? sx - tw - 14 : sx + 14;
+    tip.style.left = Math.max(minX, Math.min(maxX, tx)) + "px";
+    tip.style.top = (L.chTop + 8) + "px";
+  }
+  function hideTip() {
+    tip.hidden = true;
+    if (cross) { cross.setAttribute("visibility", "hidden"); crossDot.setAttribute("visibility", "hidden"); }
+  }
+
+  // ---------- Minimap ----------
+  const MMH = 54;
+  function buildMinimap() {
+    mmSvg.setAttribute("viewBox", `0 0 ${TOTAL_W} ${MMH}`);
+    const mmY = p => 40 - p / MAXPCT * 34;
+    const mmEl = (tag, attrs) => el(tag, attrs, mmSvg);
+    for (const [, a, b, col] of PERIODS) {
+      const xa = x(Math.min(a, 4600)), xb = x(b);
+      mmEl("rect", { x: xa, y: 44, width: Math.max(0, xb - xa), height: 10, fill: col });
+    }
+    const d = SERIES.map(([t, p], i) => (i ? "L" : "M") + x(t) + " " + mmY(p)).join(" ");
+    mmEl("path", { d: d + ` L${phanX1} 40 L${phanX0} 40 Z`, fill: "rgba(232,217,184,0.35)" });
+    mmEl("path", { d, fill: "none", stroke: "#e8d9b8", "stroke-width": 1.5, "vector-effect": "non-scaling-stroke" });
+    for (const e of EVENTS) {
+      mmEl("line", { x1: x(e.t), x2: x(e.t), y1: e.big ? 2 : 30, y2: 42, stroke: CAUSES[e.causes[0]].color, "stroke-width": e.big ? 2 : 1.2, "vector-effect": "non-scaling-stroke" });
+    }
+    mmEl("rect", { x: NOW_X, y: 6, width: L.nowW, height: 36, fill: "#d55181", "fill-opacity": 0.35 });
+    L.segments.slice(1).forEach(s => mmEl("line", { x1: s.x0, x2: s.x0, y1: 0, y2: MMH, stroke: "#4a5a70", "stroke-width": 1, "stroke-dasharray": "2 3", "vector-effect": "non-scaling-stroke" }));
+    sync();
+  }
+
+  function sync() {
+    const f = mm.clientWidth / TOTAL_W;
+    mmView.style.left = (fresco.scrollLeft * f) + "px";
+    mmView.style.width = Math.max(6, fresco.clientWidth * f) + "px";
+    const max = TOTAL_W - fresco.clientWidth;
+    mm.setAttribute("aria-valuenow", Math.round(max > 0 ? fresco.scrollLeft / max * 100 : 0));
+    // Show the % labels only while the measured part of the curve is on screen
+    const a = fresco.scrollLeft, b = a + fresco.clientWidth;
+    yaxis.hidden = !(b > phanX0 + 40 && a < phanX1 - 40);
+  }
 
   // ---------- Scrolling, dragging, keyboard ----------
-  const fresco = document.getElementById("fresco");
+  fresco.addEventListener("scroll", sync, { passive: true });
   fresco.addEventListener("wheel", ev => {
     if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX)) {
       fresco.scrollLeft += ev.deltaY;
@@ -786,85 +920,72 @@
   let drag = null;
   fresco.addEventListener("pointerdown", ev => {
     if (ev.pointerType !== "mouse" || ev.button !== 0 || ev.target.closest(".card, .now")) return;
-    drag = { x: ev.clientX, s: fresco.scrollLeft, moved: false };
+    drag = { x: ev.clientX, s: fresco.scrollLeft };
     fresco.classList.add("dragging");
   });
-  window.addEventListener("pointermove", ev => {
-    if (!drag) return;
-    fresco.scrollLeft = drag.s - (ev.clientX - drag.x);
-  });
+  window.addEventListener("pointermove", ev => { if (drag) fresco.scrollLeft = drag.s - (ev.clientX - drag.x); });
   window.addEventListener("pointerup", () => { drag = null; fresco.classList.remove("dragging"); });
   fresco.addEventListener("keydown", ev => {
     const step = ev.shiftKey ? fresco.clientWidth * 0.9 : 200;
-    if (ev.key === "ArrowRight") { fresco.scrollBy({ left: step, behavior: "smooth" }); ev.preventDefault(); }
-    if (ev.key === "ArrowLeft") { fresco.scrollBy({ left: -step, behavior: "smooth" }); ev.preventDefault(); }
+    const moves = { ArrowRight: step, ArrowLeft: -step };
+    if (ev.key in moves) { fresco.scrollBy({ left: moves[ev.key], behavior: "smooth" }); ev.preventDefault(); }
     if (ev.key === "Home") { fresco.scrollTo({ left: 0, behavior: "smooth" }); ev.preventDefault(); }
     if (ev.key === "End") { fresco.scrollTo({ left: TOTAL_W, behavior: "smooth" }); ev.preventDefault(); }
   });
+  // On touch screens, a tap elsewhere on the fresco hides the curve tooltip
+  fresco.addEventListener("pointerdown", ev => {
+    if (ev.pointerType !== "mouse" && ev.target.tagName !== "rect") hideTip();
+  });
 
-  function scrollToX(px) {
-    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    fresco.scrollTo({ left: Math.max(0, px - fresco.clientWidth * 0.3), behavior: reduce ? "auto" : "smooth" });
-  }
+  const smooth = () => matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   document.querySelectorAll("[data-jump]").forEach(b => b.addEventListener("click", () => {
     const v = b.dataset.jump;
-    if (v === "now") { fresco.scrollTo({ left: TOTAL_W, behavior: "smooth" }); return; }
-    scrollToX(x(parseFloat(v)));
+    if (v === "now") { fresco.scrollTo({ left: TOTAL_W, behavior: smooth() }); return; }
+    fresco.scrollTo({ left: Math.max(0, x(parseFloat(v)) - fresco.clientWidth * (L.compact ? 0.15 : 0.3)), behavior: smooth() });
   }));
 
-  // ---------- Minimap ----------
-  const mm = document.getElementById("minimap");
-  const mmSvg = document.getElementById("mm-svg");
-  const mmView = document.getElementById("mm-view");
-  const MMH = 54;
-  mmSvg.setAttribute("viewBox", `0 0 ${TOTAL_W} ${MMH}`);
-  const mmY = p => 40 - p / MAXPCT * 34;
-  function mmEl(tag, attrs) { return el(tag, attrs, mmSvg); }
-  for (const [, a, b, col] of PERIODS) {
-    const xa = x(Math.min(a, 4600)), xb = x(b);
-    mmEl("rect", { x: xa, y: 44, width: Math.max(0, xb - xa), height: 10, fill: col });
-  }
-  mmEl("path", { d: SERIES.map(([t, p], i) => (i ? "L" : "M") + x(t) + " " + mmY(p)).join(" ") + ` L${phanX1} 40 L${phanX0} 40 Z`, fill: "rgba(232,217,184,0.35)" });
-  mmEl("path", { d: SERIES.map(([t, p], i) => (i ? "L" : "M") + x(t) + " " + mmY(p)).join(" "), fill: "none", stroke: "#e8d9b8", "stroke-width": 1.5, "vector-effect": "non-scaling-stroke" });
-  for (const e of EVENTS) {
-    mmEl("line", { x1: x(e.t), x2: x(e.t), y1: e.big ? 2 : 30, y2: 42, stroke: CAUSES[e.causes[0]].color, "stroke-width": e.big ? 2 : 1.2, "vector-effect": "non-scaling-stroke" });
-  }
-  mmEl("rect", { x: NOW_X, y: 6, width: NOW_W, height: 36, fill: "#d55181", "fill-opacity": 0.35 });
-  SEGMENTS.slice(1).forEach(s => mmEl("line", { x1: s.x0, x2: s.x0, y1: 0, y2: MMH, stroke: "#4a5a70", "stroke-width": 1, "stroke-dasharray": "2 3", "vector-effect": "non-scaling-stroke" }));
-
-  function syncMini() {
-    const w = mm.clientWidth;
-    const f = w / TOTAL_W;
-    mmView.style.left = (fresco.scrollLeft * f) + "px";
-    mmView.style.width = Math.max(6, fresco.clientWidth * f) + "px";
-    const max = TOTAL_W - fresco.clientWidth;
-    mm.setAttribute("aria-valuenow", Math.round(max > 0 ? fresco.scrollLeft / max * 100 : 0));
-  }
-  fresco.addEventListener("scroll", syncMini, { passive: true });
-  window.addEventListener("resize", syncMini);
   let mmDrag = false;
   function mmJump(ev) {
     const r = mm.getBoundingClientRect();
-    const px = (ev.clientX - r.left) / r.width * TOTAL_W;
-    fresco.scrollLeft = px - fresco.clientWidth / 2;
+    fresco.scrollLeft = (ev.clientX - r.left) / r.width * TOTAL_W - fresco.clientWidth / 2;
   }
   mm.addEventListener("pointerdown", ev => { mmDrag = true; mm.setPointerCapture(ev.pointerId); mmJump(ev); });
   mm.addEventListener("pointermove", ev => { if (mmDrag) mmJump(ev); });
   mm.addEventListener("pointerup", () => { mmDrag = false; });
+  mm.addEventListener("pointercancel", () => { mmDrag = false; });
   mm.addEventListener("keydown", ev => {
     if (ev.key === "ArrowRight") { fresco.scrollLeft += fresco.clientWidth * 0.5; ev.preventDefault(); }
     if (ev.key === "ArrowLeft") { fresco.scrollLeft -= fresco.clientWidth * 0.5; ev.preventDefault(); }
   });
-  syncMini();
+
+  // Rebuild when the layout mode changes (e.g. rotating a phone), keeping the same moment in view
+  let lastKey = "";
+  const layoutKey = () => isCompact() + ":" + (isCompact() ? Math.max(290, Math.min(600, window.innerWidth - 64)) : 0);
+  function relayout() {
+    const key = layoutKey();
+    if (key === lastKey) { sync(); return; }
+    const hadLayout = !!L;
+    const atEnd = hadLayout && fresco.scrollLeft + fresco.clientWidth >= L.timelineEnd;
+    const centerT = hadLayout ? tAt(fresco.scrollLeft + fresco.clientWidth / 2) : null;
+    lastKey = key;
+    build();
+    if (atEnd) fresco.scrollLeft = TOTAL_W;
+    else if (centerT !== null) fresco.scrollLeft = x(centerT) - fresco.clientWidth / 2;
+    sync();
+  }
+  let rt = null;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(relayout, 150); });
+  relayout();
 
   // ---------- Drawer ----------
   const drawer = document.getElementById("drawer");
+  const scrim = document.getElementById("scrim");
   let lastFocus = null;
   function openDrawer(e) {
     lastFocus = document.activeElement;
     document.getElementById("d-when").textContent = e.when + (e.big ? " · Big Five #" + e.big : "");
     document.getElementById("d-title").textContent = e.name;
-    document.getElementById("d-causes").innerHTML = e.causes.map(c => `<span class="chip"><i class="dot" style="background:${CAUSES[c].color}"></i>${CAUSES[c].label}</span>`).join("");
+    document.getElementById("d-causes").innerHTML = chipsHTML(e.causes);
     const loss = e.loss || (e.t <= 541 && e.t >= 2.58 ? `About ${Math.round(pctAt(e.t))}% of marine genera` : "");
     document.getElementById("d-loss-wrap").hidden = !loss;
     document.getElementById("d-loss").textContent = loss;
@@ -872,11 +993,17 @@
     document.getElementById("d-why").textContent = e.why;
     document.getElementById("d-after-wrap").hidden = !e.after;
     document.getElementById("d-after").textContent = e.after || "";
+    drawer.scrollTop = 0;
     drawer.hidden = false;
-    document.getElementById("d-close").focus();
+    scrim.hidden = false;
+    document.getElementById("d-close").focus({ preventScroll: true });
   }
-  function closeDrawer() { drawer.hidden = true; if (lastFocus) lastFocus.focus(); }
+  function closeDrawer() {
+    drawer.hidden = true; scrim.hidden = true;
+    if (lastFocus) lastFocus.focus({ preventScroll: true });
+  }
   document.getElementById("d-close").addEventListener("click", closeDrawer);
+  scrim.addEventListener("click", closeDrawer);
   document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !drawer.hidden) closeDrawer(); });
 })();
 </script>
