@@ -289,16 +289,16 @@
 
   <section class="notes">
     <div>
-      <h2>How to read the curve</h2>
-      <p>The pale curve shows the share of marine animal genera (groups of related species) that vanished in each geological stage. It uses genera because fossils of whole groups survive better than fossils of single species. The values are approximate and redrawn after Rohde &amp; Muller (2005), who used Sepkoski's fossil compendium.</p>
+      <h2>How to read the bars</h2>
+      <p>Each bar is one geological stage, a slice of time a few million years long. The taller and brighter the bar, the bigger the share of sea-animal groups (genera, which are groups of closely related species) that disappeared during it. Scientists count groups rather than single species because fossils of whole groups survive better. For the Big Five, the labels also give the estimated share of species lost. The values are approximate and redrawn after Rohde &amp; Muller (2005), who used Sepkoski's fossil compendium.</p>
     </div>
     <div>
       <h2>Why the scale changes</h2>
-      <p>Most of the story happens in the last half-billion years, and the human part happens in the last few centuries. Each dashed line on the fresco marks a zoom. The label beside it says how many years one pixel stands for in that section.</p>
+      <p>Most of the story happens in the last half-billion years, and the human part happens in the last few centuries. So the timeline zooms in several times as you scroll. Each time it does, a label tells you how much time one screen-width now covers.</p>
     </div>
     <div>
       <h2>What we can't count</h2>
-      <p>Before about 540 million years ago, life was mostly microscopic and left few fossils, so nobody can put a percentage on those crises. The same goes for the ice age and recorded history, where we know individual species instead of fossil percentages. Those sections show events without a curve.</p>
+      <p>Before about 540 million years ago, life was mostly microscopic and left few fossils, so nobody can put a percentage on those crises. The same goes for the ice age and recorded history, where we know individual species instead of fossil percentages. Those sections show events without bars.</p>
     </div>
   </section>
 </div>
@@ -349,13 +349,15 @@
     if (t >= 0.000526) return Math.round(t * 1e6).toLocaleString("en") + " years ago";
     return "year " + Math.round(2026 - t * 1e6);
   }
-  function fmtPerPx(years) {
-    if (years >= 1e6) return (Math.round(years / 1e5) / 10) + " million years";
+  function fmtSpan(years) {
+    const r = v => v >= 10 ? Math.round(v) : Math.round(v * 10) / 10;
+    if (years >= 1e9) return r(years / 1e9) + " billion years";
+    if (years >= 1e6) return r(years / 1e6) + " million years";
+    if (years >= 1e4) return (Math.round(years / 1000) * 1000).toLocaleString("en") + " years";
     if (years >= 1000) return (Math.round(years / 100) * 100).toLocaleString("en") + " years";
-    if (years >= 10) return Math.round(years) + " years";
-    if (years >= 1) return (Math.round(years * 10) / 10) + " years";
-    return Math.round(years * 12) + " months";
+    return Math.round(years) + " years";
   }
+  const fmtMa = t => t >= 1 ? (Math.round(t * 10) / 10).toLocaleString("en") : String(t);
 
   // ---------- Layout: desktop or compact (phones) ----------
   const MAXPCT = 60;
@@ -382,7 +384,6 @@
     L.segments = BASE_SEGMENTS.map(s => {
       const w = Math.round(s.width * L.scale);
       const seg = { ...s, width: w, x0: acc, x1: acc + w };
-      seg.note = "1 pixel ≈ " + fmtPerPx((s.from - s.to) * 1e6 / w);
       acc += w;
       return seg;
     });
@@ -433,13 +434,22 @@
     [20.4, 4, "Aquitanian"], [16, 4, "Burdigalian"], [13.8, 6, "Langhian"], [11.6, 5, "Serravallian"], [7.2, 5, "Tortonian"],
     [5.3, 7, "Messinian"], [3.6, 6, "Zanclean"], [2.58, 8, "Piacenzian"],
   ];
-  function pctAt(t) {
-    for (let i = 0; i < SERIES.length - 1; i++) {
-      const [a, pa] = SERIES[i], [b, pb] = SERIES[i + 1];
-      if (t <= a && t >= b) return pa + (pb - pa) * (a - t) / (a - b);
-    }
-    return null;
+  // Each stage runs from the previous row's age to its own age; SERIES[0] only marks the start
+  function stageAt(t) {
+    for (let i = 1; i < SERIES.length; i++) if (t <= SERIES[i - 1][0] && t >= SERIES[i][0]) return i;
+    return -1;
   }
+  function pctAt(t) { const i = stageAt(t); return i < 0 ? null : SERIES[i][1]; }
+  // For an event, the worst stage it touches (spans like the Late Devonian cover several)
+  function peakStage(e) {
+    const a = e.t, b = e.span === undefined ? e.t : e.span;
+    let best = -1;
+    for (let i = 1; i < SERIES.length; i++) {
+      if (SERIES[i - 1][0] >= b && SERIES[i][0] <= a && (best < 0 || SERIES[i][1] > SERIES[best][1])) best = i;
+    }
+    return best;
+  }
+  const BIG_LABEL = { 1: "~85% of species", 2: "~75% of species", 3: "81–96% of species", 4: "~76% of species", 5: "~76% of species" };
 
 
   // ---------- Events ----------
@@ -775,7 +785,7 @@
       el("line", { x1: phanX0, x2: phanX1, y1: yy, y2: yy, stroke: p === 0 ? "#3a4a60" : "#1f2a38", "stroke-width": 1 });
     }
     for (let gx = phanX0 + 44; gx < phanX1 - 400; gx += L.compact ? 900 : 1800) {
-      text("% OF MARINE GENERA LOST PER STAGE (APPROX.)", { x: gx, y: L.chTop - 6, fill: "#b3b9c3", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.06em" });
+      text("SHARE OF SEA-ANIMAL GROUPS WIPED OUT IN EACH STAGE (APPROX.)", { x: gx, y: L.chTop - 6, fill: "#b3b9c3", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.06em" });
     }
 
     // Event span bands
@@ -786,16 +796,29 @@
       el("rect", { x: a, y: L.chTop, width: b - a, height: L.chBot - L.chTop, fill: CAUSES[e.causes[0]].color, "fill-opacity": 0.13 });
     }
 
-    // Curve
-    const pts = SERIES.map(([t, p]) => [x(t), yPct(p)]);
-    const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
-    el("path", { d: line + ` L${pts[pts.length - 1][0]} ${L.chBot} L${pts[0][0]} ${L.chBot} Z`, fill: "rgba(232,217,184,0.14)" });
-    el("path", { d: line, fill: "none", stroke: "#e8d9b8", "stroke-width": 2, "stroke-linejoin": "round" });
+    // Bars: one per geological stage, as wide as the stage lasted, as tall as the loss
+    const bars = el("g", {});
+    for (let i = 1; i < SERIES.length; i++) {
+      const [end, pct] = SERIES[i];
+      const xa = x(SERIES[i - 1][0]), xb = x(end);
+      const top = yPct(pct);
+      el("rect", { x: xa + 0.5, y: top, width: Math.max(1, xb - xa - 1.5), height: L.chBot - top,
+        fill: "#e8d9b8", "fill-opacity": (0.18 + 0.82 * Math.min(1, pct / 56)).toFixed(2) }, bars);
+      if (pct >= 25 && !EVENTS.some(e => e.big && peakStage(e) === i)) {
+        text(pct + "%", { x: (xa + xb) / 2, y: top - 6, fill: "#e8d9b8", "font-family": MONO, "font-size": L.font, "font-weight": 500, "text-anchor": "middle" }, bars);
+      }
+    }
 
-    // Scale breaks
+    // Zoom markers: say in plain words how much time one screen covers from here on
+    const screenW = Math.max(300, fresco.clientWidth || window.innerWidth);
     L.segments.forEach((s, i) => {
-      if (i > 0) el("line", { x1: s.x0, x2: s.x0, y1: 4, y2: L.tickY + 22, stroke: "#4a5a70", "stroke-dasharray": "3 5", "stroke-width": 1 });
-      text("ZOOM " + (i + 1) + " · " + s.note, { x: s.x0 + 10, y: L.zoomY, fill: "#b3b9c3", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.04em" });
+      const span = fmtSpan((s.from - s.to) * 1e6 / s.width * screenW);
+      const label = (i === 0 ? "ONE SCREEN ≈ " : "ZOOMING IN · ONE SCREEN NOW ≈ ") + span.toUpperCase();
+      const w = label.length * L.font * 0.62 + 20;
+      if (i > 0) el("line", { x1: s.x0, x2: s.x0, y1: L.chTop, y2: L.rib2 + L.ribH, stroke: "#4a5a70", "stroke-width": 1 });
+      const gx = s.x0 + (i === 0 ? 8 : 0);
+      el("rect", { x: gx, y: L.chTop + 4, width: w, height: L.font + 11, rx: (L.font + 11) / 2, fill: "#0d131c", stroke: "#4a5a70", "stroke-width": 1 });
+      text(label, { x: gx + 10, y: L.chTop + 4 + L.font + 4, fill: "#e8d9b8", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.04em" });
     });
 
     // Ribbons
@@ -841,14 +864,23 @@
     sorted.forEach(e => {
       const ex = x(e.t);
       const col = CAUSES[e.causes[0]].color;
-      const inCurve = e.t <= 541 && e.t >= 2.58;
-      const py = inCurve ? yPct(pctAt(e.t)) : midY - 10;
-      const lx = Math.min(Math.max(ex, e.left + 10), e.left + L.cardW - 10);
+      const si = peakStage(e);
+      let ax = ex, py = midY - 10;
+      if (si > 0) {
+        const xa = x(SERIES[si - 1][0]), xb = x(SERIES[si][0]);
+        py = yPct(SERIES[si][1]);
+        if (ax < xa || ax > xb) ax = (xa + xb) / 2;
+      }
+      const lx = Math.min(Math.max(ax, e.left + 10), e.left + L.cardW - 10);
       const bottom = e.top + e.h;
       const rail = Math.min(L.chTop - 8, py - 6);
-      el("path", { d: `M${lx} ${bottom} L${lx} ${bottom + 6} L${ex} ${rail} L${ex} ${py}`,
+      el("path", { d: `M${lx} ${bottom} L${lx} ${bottom + 6} L${ax} ${rail} L${ax} ${py}`,
         fill: "none", stroke: col, "stroke-width": 1.2, "stroke-opacity": 0.8 }, leaders);
-      el("circle", { cx: ex, cy: py, r: e.big ? 6 : 4.5, fill: col, stroke: "#131a24", "stroke-width": 2 }, leaders);
+      el("circle", { cx: ax, cy: py, r: e.big ? 6 : 4.5, fill: col, stroke: "#131a24", "stroke-width": 2 }, leaders);
+      if (e.big) {
+        text("BIG FIVE #" + e.big, { x: ax + 10, y: py - 16, fill: "#e8d9b8", "font-family": MONO, "font-size": L.font, "font-weight": 500, "letter-spacing": "0.05em" }, leaders);
+        text(BIG_LABEL[e.big] + " gone", { x: ax + 10, y: py - 3, fill: "#ece7dc", "font-family": "Big Shoulders Display, Arial Narrow, sans-serif", "font-size": L.compact ? 15 : 17, "font-weight": 700 }, leaders);
+      }
     });
 
     // Now panel
@@ -870,11 +902,11 @@
       <p style="margin-top:12px">The main causes today: habitat loss (farming, logging, cities), overhunting and overfishing, invasive species, pollution, and climate change. Unlike the asteroid, these are choices, and every one of them can be slowed.</p>
       <div class="src">Sources: IUCN Red List 2024; IPBES Global Assessment 2019; Ceballos et al., Science Advances 2015. Figures rounded.</div>`;
     canvas.appendChild(now);
-    el("line", { x1: L.timelineEnd, x2: NOW_X, y1: midY, y2: midY, stroke: "#d55181", "stroke-dasharray": "2 4" });
+    el("line", { x1: L.timelineEnd, x2: NOW_X, y1: midY, y2: midY, stroke: "#d55181", "stroke-opacity": 0.5 });
 
     // Hover / tap on the curve
-    cross = el("line", { y1: L.chTop, y2: L.chBot, stroke: "#e8d9b8", "stroke-width": 1, "stroke-opacity": 0.5, visibility: "hidden" });
-    crossDot = el("circle", { r: 5, fill: "#e8d9b8", stroke: "#131a24", "stroke-width": 2, visibility: "hidden" });
+    cross = el("rect", { fill: "none", stroke: "#ffffff", "stroke-width": 1.5, visibility: "hidden" });
+    crossDot = cross;
     const hit = el("rect", { x: phanX0, y: L.chTop - 10, width: phanX1 - phanX0, height: L.chBot - L.chTop + 10, fill: "transparent" });
     hit.addEventListener("pointermove", showTip);
     hit.addEventListener("pointerdown", showTip);
@@ -890,25 +922,26 @@
 
   function showTip(ev) {
     const r = canvas.getBoundingClientRect();
-    const px = ev.clientX - r.left;
-    if (tAt(px) === null) return;
-    let bestI = 0, bestD = Infinity;
-    SERIES.forEach(([st], i) => { const d = Math.abs(x(st) - px); if (d < bestD) { bestD = d; bestI = i; } });
-    const [st, sp, name] = SERIES[bestI];
-    const sx = x(st), sy = yPct(sp);
-    cross.setAttribute("x1", sx); cross.setAttribute("x2", sx); cross.setAttribute("visibility", "visible");
-    crossDot.setAttribute("cx", sx); crossDot.setAttribute("cy", sy); crossDot.setAttribute("visibility", "visible");
-    tip.innerHTML = `<b>${name}</b><br>ends ${fmtAge(st)}<br>~${sp}% of marine genera lost<br><span class="muted">approximate</span>`;
+    const t = tAt(ev.clientX - r.left);
+    if (t === null) return;
+    const i = stageAt(t);
+    if (i < 1) return;
+    const [end, pct, name] = SERIES[i], begin = SERIES[i - 1][0];
+    const xa = x(begin), xb = x(end), top = yPct(pct);
+    cross.setAttribute("x", xa); cross.setAttribute("y", top);
+    cross.setAttribute("width", Math.max(2, xb - xa - 1)); cross.setAttribute("height", L.chBot - top);
+    cross.setAttribute("visibility", "visible");
+    tip.innerHTML = `<b>${name}</b><br><span class="muted">${fmtMa(begin)} to ${fmtMa(end)} million years ago</span><br>About <b>${pct} in every 100</b> groups of sea animals disappeared`;
     tip.hidden = false;
-    const tw = tip.offsetWidth;
+    const tw = tip.offsetWidth, cx = (xa + xb) / 2;
     const minX = fresco.scrollLeft + 8, maxX = fresco.scrollLeft + fresco.clientWidth - tw - 8;
-    let tx = sx + 14 > maxX ? sx - tw - 14 : sx + 14;
+    const tx = cx + 14 > maxX ? cx - tw - 14 : cx + 14;
     tip.style.left = Math.max(minX, Math.min(maxX, tx)) + "px";
-    tip.style.top = (L.chTop + 8) + "px";
+    tip.style.top = (L.chTop + 30) + "px";
   }
   function hideTip() {
     tip.hidden = true;
-    if (cross) { cross.setAttribute("visibility", "hidden"); crossDot.setAttribute("visibility", "hidden"); }
+    if (cross) cross.setAttribute("visibility", "hidden");
   }
 
   // ---------- Minimap ----------
@@ -921,14 +954,14 @@
       const xa = x(Math.min(a, 4600)), xb = x(b);
       mmEl("rect", { x: xa, y: 44, width: Math.max(0, xb - xa), height: 10, fill: col });
     }
-    const d = SERIES.map(([t, p], i) => (i ? "L" : "M") + x(t) + " " + mmY(p)).join(" ");
-    mmEl("path", { d: d + ` L${phanX1} 40 L${phanX0} 40 Z`, fill: "rgba(232,217,184,0.35)" });
-    mmEl("path", { d, fill: "none", stroke: "#e8d9b8", "stroke-width": 1.5, "vector-effect": "non-scaling-stroke" });
+    for (let i = 1; i < SERIES.length; i++) {
+      const xa = x(SERIES[i - 1][0]), xb = x(SERIES[i][0]), p = SERIES[i][1];
+      mmEl("rect", { x: xa, y: mmY(p), width: Math.max(1, xb - xa), height: 40 - mmY(p), fill: "#e8d9b8", "fill-opacity": (0.3 + 0.7 * Math.min(1, p / 56)).toFixed(2) });
+    }
     for (const e of EVENTS) {
       mmEl("line", { x1: x(e.t), x2: x(e.t), y1: e.big ? 2 : 30, y2: 42, stroke: CAUSES[e.causes[0]].color, "stroke-width": e.big ? 2 : 1.2, "vector-effect": "non-scaling-stroke" });
     }
     mmEl("rect", { x: NOW_X, y: 6, width: L.nowW, height: 36, fill: "#d55181", "fill-opacity": 0.35 });
-    L.segments.slice(1).forEach(s => mmEl("line", { x1: s.x0, x2: s.x0, y1: 0, y2: MMH, stroke: "#4a5a70", "stroke-width": 1, "stroke-dasharray": "2 3", "vector-effect": "non-scaling-stroke" }));
     sync();
   }
 
@@ -1022,7 +1055,8 @@
     document.getElementById("d-when").textContent = e.when + (e.big ? " · Big Five #" + e.big : "");
     document.getElementById("d-title").textContent = e.name;
     document.getElementById("d-causes").innerHTML = chipsHTML(e.causes);
-    const loss = e.loss || (e.t <= 541 && e.t >= 2.58 ? `About ${Math.round(pctAt(e.t))}% of marine genera` : "");
+    const ps = peakStage(e);
+    const loss = e.loss || (ps > 0 ? `About ${SERIES[ps][1]}% of sea-animal groups (genera)` : "");
     document.getElementById("d-loss-wrap").hidden = !loss;
     document.getElementById("d-loss").textContent = loss;
     document.getElementById("d-lost").textContent = e.lost;
