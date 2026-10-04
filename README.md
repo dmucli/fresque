@@ -1,11 +1,22 @@
 # fresque
 
-**The Extinction Fresco** is a scrollable timeline of life and extinction, running from the birth of the Earth (4.6 billion years ago) to 2026.
+**Extinction Events Timeline** is a scrollable timeline of life and extinction, running from the birth of the Earth (4.6 billion years ago) to 2026.
 
 - The pale curve shows the approximate share of marine animal genera lost in each geological stage over the last 541 million years. Values are redrawn after Rohde & Muller (2005).
 - Each card is an extinction event or a milestone. It shows how much was lost, what disappeared, and why. Tap or click "More ›" to also read what came after.
 - Colours show the cause: asteroid impact, volcanism, climate swings, ocean & air chemistry, or humans.
 - The last panel shows species in danger today (IUCN Red List 2024, IPBES 2019).
+
+## Four views
+
+Use the switch at the top to change how time is drawn:
+
+- **Whole history:** one time scale from 4.6 billion years ago to today.
+- **Age of animals:** the last 541 million years, still at one scale but zoomed in.
+- **Log time:** each big step to the right is 10 times closer to today, so recent extinctions get room.
+- **List:** every event in time order with its full story. Easiest on a phone.
+
+The big "Now viewing" label shows where you are in time. The ‹ › buttons jump to the previous or next event, and tapping a cause (like "Humans") hides or shows its events.
 
 ## View it on an iPhone (or any phone)
 
