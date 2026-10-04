@@ -1,18 +1,29 @@
 # fresque
 
-**The Extinction Fresco** is a scrollable timeline of life and extinction, running from the birth of the Earth (4.6 billion years ago) to 2026.
+**Extinction Events Timeline** is a scrollable timeline of life and extinction, running from the birth of the Earth (4.6 billion years ago) to 2026.
 
-- The pale curve shows the approximate share of marine animal genera lost in each geological stage over the last 541 million years. Values are redrawn after Rohde & Muller (2005).
+- Bars show the approximate share of sea-animal groups (genera) lost in each geological stage over the last 541 million years. Taller and brighter means more was lost. Values are redrawn after Rohde & Muller (2005).
 - Each card is an extinction event or a milestone. It shows how much was lost, what disappeared, and why. Tap or click "More ›" to also read what came after.
 - Colours show the cause: asteroid impact, volcanism, climate swings, ocean & air chemistry, or humans.
 - The last panel shows species in danger today (IUCN Red List 2024, IPBES 2019).
 
+## Four views
+
+Use the switch at the top to change how time is drawn:
+
+- **Whole history:** one time scale from 4.6 billion years ago to today.
+- **Age of animals:** the last 541 million years, still at one scale but zoomed in.
+- **Log time:** each big step to the right is 10 times closer to today, so recent extinctions get room.
+- **List:** every event in time order with its full story. Easiest on a phone.
+
+The big "Now viewing" label shows where you are in time. The ‹ › buttons jump to the previous or next event, and tapping a cause (like "Humans") hides or shows its events.
+
 ## View it on an iPhone (or any phone)
 
-1. Open the fresco's link in Safari (see "Get a public link" below).
-2. Swipe left and right on the fresco to travel through time.
+1. Open the timeline's link in Safari (see "Get a public link" below).
+2. Swipe left and right on the timeline to travel through time.
 3. Tap a "Jump to" button to go straight to a big moment. The row of buttons also scrolls sideways.
-4. Tap the curve to see a stage's name and how much was lost.
+4. Tap a bar to see a stage's name and how much was lost.
 5. Tap a card to open its full details. Tap "Close" or the dark area above the panel to go back.
 
 Turn the phone sideways for a wider view. The page keeps you at the same moment in time.
@@ -23,7 +34,7 @@ It's one HTML file, so there's nothing to install.
 
 1. Download `index.html` (on GitHub, open the file and click the download button).
 2. Double-click it. It opens in your web browser.
-3. Scroll sideways with your mouse wheel or trackpad, drag with the mouse, or use the "Jump to" buttons. Arrow keys also work once you click the fresco.
+3. Scroll sideways with your mouse wheel or trackpad, drag with the mouse, or use the "Jump to" buttons. Arrow keys also work once you click the timeline.
 
 You need an internet connection only for the fonts. Without one, the page still works with fallback fonts.
 

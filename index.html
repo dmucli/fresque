@@ -1,4 +1,4 @@
-<title>The Extinction Fresco</title>
+<title>Extinction Events Timeline</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
@@ -57,8 +57,16 @@
     text-wrap: balance;
   }
   .lede { margin: 6px 0 0; color: var(--ink-2); max-width: 68ch; font-size: 15px; }
-  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: flex-end; max-width: 420px; }
-  .legend span, .chip {
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 8px; justify-content: flex-end; max-width: 460px; }
+  .legend button {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    font: 500 11.5px/1 var(--mono); color: var(--ink); letter-spacing: 0.02em;
+    background: var(--surface); border: 1px solid var(--hair-2); border-radius: 999px; padding: 6px 10px;
+  }
+  .legend button:hover { border-color: var(--ink-3); }
+  .legend button[aria-pressed="false"] { color: var(--ink-3); background: transparent; text-decoration: line-through; }
+  .legend button[aria-pressed="false"] .dot { opacity: 0.3; }
+  .chip {
     display: inline-flex; align-items: center; gap: 6px;
     font-family: var(--mono); font-size: 11.5px; color: var(--ink-2);
     letter-spacing: 0.02em;
@@ -66,12 +74,63 @@
   .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 
   /* Navigation row */
-  .nav { display: flex; flex-wrap: wrap; gap: 6px; padding-block: 6px 10px; align-items: center; }
+  .toolbar {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 15;
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px 20px; align-items: center;
+    padding-block: 10px; margin-inline: -16px; padding-inline: 16px;
+    background: var(--ground); border-bottom: 1px solid var(--hair);
+  }
+  .views { display: inline-flex; background: var(--surface); border: 1px solid var(--hair-2); border-radius: 10px; padding: 3px; gap: 2px; }
+  .views button {
+    font: 600 13px/1 var(--mono); color: var(--ink-2); background: transparent; border: 0;
+    border-radius: 7px; padding: 9px 12px; cursor: pointer; white-space: nowrap;
+  }
+  .views button:hover { color: var(--ink); }
+  .views button[aria-selected="true"] { background: var(--bone); color: #16130c; }
+  .here { display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; min-width: 0; }
+  .here small { font: 500 10.5px var(--mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.1em; }
+  .here strong { font: 800 26px/1.05 var(--display); color: var(--bone); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+  .here span { font: 500 13px var(--mono); color: var(--ink-2); }
+  .steps { display: flex; gap: 6px; }
+  .steps button, .nav button {
+    font: 500 12px/1 var(--mono); color: var(--ink); background: var(--surface);
+    border: 1px solid var(--hair-2); border-radius: 999px; padding: 8px 12px; cursor: pointer;
+  }
+  .steps button:hover { background: var(--surface-2); border-color: var(--ink-3); }
+  .short { display: none; }
+  .view-note { margin: 8px 0 0; font-size: 14px; color: var(--ink-2); max-width: 80ch; }
+  .is-list .here, .is-list .steps, .is-list .minimap, .is-list .mm-caption, .is-list .fresco-wrap { display: none; }
+
+  /* List view */
+  .listview { display: grid; gap: 10px; margin-top: 8px; }
+  .listview h2 {
+    font: 800 24px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em;
+    margin: 18px 0 4px; padding-top: 10px; border-top: 1px solid var(--hair-2); color: var(--ink);
+  }
+  .listview h2 small { display: block; font: 500 11px/1.4 var(--mono); color: var(--ink-3); letter-spacing: 0.06em; margin-top: 4px; text-transform: none; }
+  .lv-item {
+    display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 6px 22px;
+    background: var(--surface); border: 1px solid var(--hair-2); border-left: 4px solid var(--cause, var(--c-context));
+    border-radius: 8px; padding: 14px 16px;
+  }
+  .lv-item.big { box-shadow: 0 0 0 1px var(--bone) inset; }
+  .lv-when { font: 800 22px/1.1 var(--display); color: var(--bone); }
+  .lv-when small { display: block; font: 500 11px/1.3 var(--mono); color: var(--ink-3); margin-top: 4px; letter-spacing: 0.04em; }
+  .lv-body h3 { font: 800 24px/1.05 var(--display); text-transform: uppercase; margin: 0 0 6px; }
+  .lv-body .loss { font: 700 17px/1.2 var(--display); color: var(--bone); margin-bottom: 6px; }
+  .lv-body p { margin: 0 0 8px; font-size: 15px; color: var(--ink-2); }
+  .lv-body p b { display: block; font: 500 10.5px var(--mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+  .lv-meter { height: 8px; background: var(--hair); border-radius: 0 4px 4px 0; margin: 2px 0 10px; max-width: 360px; position: relative; }
+  .lv-meter i { position: absolute; inset: 0 auto 0 0; background: var(--bone); border-radius: 0 4px 4px 0; }
+  .lv-body .chips { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .listview .now { position: static; width: auto; margin-top: 18px; }
+
+  .nav { display: flex; flex-wrap: wrap; gap: 6px; padding-block: 10px; align-items: center; }
   .nav .label {
     font-family: var(--mono); font-size: 11px; color: var(--ink-3);
     text-transform: uppercase; letter-spacing: 0.08em; margin-right: 4px;
   }
-  .nav button {
+  .nav button.unused {
     font: 500 12px/1 var(--mono);
     color: var(--ink);
     background: var(--surface);
@@ -144,6 +203,8 @@
   .card .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 2px; }
   .card .chips { display: flex; gap: 4px 10px; flex-wrap: wrap; }
   .card .chip { font-size: 10px; white-space: nowrap; }
+  .card.recent-head { cursor: default; border-left-color: var(--c-humans); background: #171f2b; }
+  .card.recent-head .txt { color: var(--ink); }
   .card .more { font: 500 10.5px var(--mono); color: var(--bone); white-space: nowrap; flex: none; }
 
   .tip {
@@ -212,6 +273,19 @@
     .nav::-webkit-scrollbar { display: none; }
     .nav button { flex: none; }
     .nav .label { display: none; }
+    .toolbar { grid-template-columns: minmax(0, 1fr) auto; }
+    .views { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .views button { padding: 10px 4px; font-size: 13px; }
+    .views .long, .steps .long, .here small { display: none; }
+    .views .short { display: inline; }
+    .toolbar { padding-block: 8px; gap: 8px 12px; }
+    .here { flex-wrap: nowrap; overflow: hidden; }
+    .here strong { font-size: 20px; white-space: nowrap; }
+    .here span { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .steps button { width: 44px; height: 40px; padding: 0; font-size: 20px; }
+    .lv-item { grid-template-columns: 1fr; }
+    .lv-when { font-size: 19px; }
+    .lv-body h3 { font-size: 21px; }
     .mm-caption .mid { display: none; }
   }
   @media (max-width: 600px) {
@@ -245,30 +319,48 @@
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>The Extinction Fresco</h1>
-      <p class="lede">4.6 billion years of life and loss, from the birth of the Earth to this year. Swipe or scroll sideways, or use the buttons. Tap any panel to learn what disappeared and why.</p>
+      <h1>Extinction Events Timeline</h1>
+      <p class="lede">4.6 billion years of life and loss, from the birth of the Earth to this year. Pick a view, then swipe or scroll sideways. Tap any card to learn what disappeared and why.</p>
     </div>
-    <div class="legend" aria-label="Causes">
-      <span><i class="dot" style="background:var(--c-impact)"></i>Asteroid impact</span>
-      <span><i class="dot" style="background:var(--c-volcanism)"></i>Volcanism</span>
-      <span><i class="dot" style="background:var(--c-climate)"></i>Climate swings</span>
-      <span><i class="dot" style="background:var(--c-chemistry)"></i>Ocean &amp; air chemistry</span>
-      <span><i class="dot" style="background:var(--c-humans)"></i>Humans</span>
-      <span><i class="dot" style="background:var(--c-context)"></i>Milestone</span>
+    <div class="legend" id="legend" role="group" aria-label="Show events by cause (tap to hide or show)">
+      <button type="button" aria-pressed="true" data-cause="impact"><i class="dot" style="background:var(--c-impact)"></i>Asteroid impact</button>
+      <button type="button" aria-pressed="true" data-cause="volcanism"><i class="dot" style="background:var(--c-volcanism)"></i>Volcanism</button>
+      <button type="button" aria-pressed="true" data-cause="climate"><i class="dot" style="background:var(--c-climate)"></i>Climate swings</button>
+      <button type="button" aria-pressed="true" data-cause="chemistry"><i class="dot" style="background:var(--c-chemistry)"></i>Ocean &amp; air chemistry</button>
+      <button type="button" aria-pressed="true" data-cause="humans"><i class="dot" style="background:var(--c-humans)"></i>Humans</button>
+      <button type="button" aria-pressed="true" data-cause="context"><i class="dot" style="background:var(--c-context)"></i>Milestone</button>
     </div>
   </header>
 
+  <div class="toolbar" id="toolbar">
+    <div class="views" role="tablist" aria-label="Choose a view">
+      <button type="button" role="tab" data-view="whole" aria-selected="true"><span class="long">Whole history</span><span class="short">Whole</span></button>
+      <button type="button" role="tab" data-view="animals" aria-selected="false"><span class="long">Age of animals</span><span class="short">Animals</span></button>
+      <button type="button" role="tab" data-view="log" aria-selected="false"><span class="long">Log time</span><span class="short">Log</span></button>
+      <button type="button" role="tab" data-view="list" aria-selected="false"><span class="long">List</span><span class="short">List</span></button>
+    </div>
+    <div class="here" id="here" aria-live="polite">
+      <small>Now viewing</small>
+      <strong id="here-t">4.6 billion years ago</strong>
+      <span id="here-p"></span>
+    </div>
+    <div class="steps" id="steps">
+      <button type="button" id="prev" aria-label="Previous event">‹<span class="long"> Previous</span></button>
+      <button type="button" id="next" aria-label="Next event"><span class="long">Next </span>›</button>
+    </div>
+  </div>
+  <p class="view-note" id="view-note"></p>
+
   <nav class="nav" aria-label="Jump to">
     <span class="label">Jump to</span>
-    <button type="button" data-jump="4540">Earth forms</button>
-    <button type="button" data-jump="2400">Oxygen crisis</button>
+    <button type="button" data-jump="4540" data-precambrian>Earth forms</button>
+    <button type="button" data-jump="2400" data-precambrian>Oxygen crisis</button>
     <button type="button" data-jump="443.8">Big Five 1 · Ordovician</button>
     <button type="button" data-jump="372">2 · Devonian</button>
     <button type="button" data-jump="251.9">3 · Permian</button>
     <button type="button" data-jump="201.4">4 · Triassic</button>
     <button type="button" data-jump="66">5 · Cretaceous</button>
-    <button type="button" data-jump="0.045">Ice-age giants</button>
-    <button type="button" data-jump="0.000345">Dodo to today</button>
+    <button type="button" data-jump="recent">Last 300,000 years</button>
     <button type="button" data-jump="now">Species in danger now</button>
   </nav>
 
@@ -276,7 +368,7 @@
     <svg id="mm-svg" preserveAspectRatio="none"></svg>
     <div class="mm-view" id="mm-view"></div>
   </div>
-  <div class="mm-caption"><span>4.6 billion years ago</span><span class="mid">Overview: the scale stretches as we get closer to today</span><span>2026</span></div>
+  <div class="mm-caption" id="mm-caption"><span id="mm-left">4.6 billion years ago</span><span class="mid" id="mm-mid">The whole graph at the same scale</span><span>Today</span></div>
 
   <div class="fresco-wrap">
     <div class="fresco" id="fresco" tabindex="0" aria-label="Scrollable timeline of extinctions">
@@ -287,14 +379,16 @@
     <div class="yaxis" id="yaxis" aria-hidden="true" hidden></div>
   </div>
 
+  <section class="listview" id="listview" hidden aria-label="All events as a list"></section>
+
   <section class="notes">
     <div>
       <h2>How to read the bars</h2>
       <p>Each bar is one geological stage, a slice of time a few million years long. The taller and brighter the bar, the bigger the share of sea-animal groups (genera, which are groups of closely related species) that disappeared during it. Scientists count groups rather than single species because fossils of whole groups survive better. For the Big Five, the labels also give the estimated share of species lost. The values are approximate and redrawn after Rohde &amp; Muller (2005), who used Sepkoski's fossil compendium.</p>
     </div>
     <div>
-      <h2>Why the scale changes</h2>
-      <p>Most of the story happens in the last half-billion years, and the human part happens in the last few centuries. So the timeline zooms in several times as you scroll. Each time it does, a label tells you how much time one screen-width now covers.</p>
+      <h2>Four ways to look at it</h2>
+      <p><b>Whole history</b> and <b>Age of animals</b> keep one time scale from start to finish, so distances are honest: animals fill only the last eighth of Earth's story, and all of human history fits in a couple of pixels. <b>Log time</b> makes each step to the right ten times closer to today, which spreads out the recent past. <b>List</b> shows every event in order, easiest to read on a phone.</p>
     </div>
     <div>
       <h2>What we can't count</h2>
@@ -330,17 +424,11 @@
   };
 
 
-  // ---------- Piecewise time scale (t = millions of years before 2026) ----------
-  // Widths are for desktop; small screens scale them down (see layoutFor).
-  const BASE_SEGMENTS = [
-    { from: 4600,     to: 541,      width: 3650 },
-    { from: 541,      to: 2.58,     width: 6460 },
-    { from: 2.58,     to: 0.13,     width: 520 },
-    { from: 0.13,     to: 0.0117,   width: 1180 },
-    { from: 0.0117,   to: 0.000526, width: 1120 },
-    { from: 0.000526, to: 0.000126, width: 1500 },
-    { from: 0.000126, to: 0,        width: 3000 },
-  ];
+  // ---------- One uniform time scale (t = millions of years before 2026) ----------
+  // Every pixel is the same amount of time from the first to the last one.
+  const START = 4600;
+  // Events younger than this all land in the graph's last couple of pixels, so they are listed after it
+  const RECENT = 0.5;
   const yearCE = y => (2026 - y) / 1e6; // calendar year -> t
 
   function fmtAge(t) {
@@ -348,6 +436,10 @@
     if (t >= 1) return (Math.round(t * 10) / 10).toLocaleString("en") + " million years ago";
     if (t >= 0.000526) return Math.round(t * 1e6).toLocaleString("en") + " years ago";
     return "year " + Math.round(2026 - t * 1e6);
+  }
+  function fmtTick(t) {
+    if (t >= 1000) return (t / 1000) + " billion years ago";
+    return t + " million years ago";
   }
   function fmtSpan(years) {
     const r = v => v >= 10 ? Math.round(v) : Math.round(v * 10) / 10;
@@ -362,17 +454,30 @@
   // ---------- Layout: desktop or compact (phones) ----------
   const MAXPCT = 60;
   function isCompact() { return window.innerWidth < 700 || window.innerHeight < 560; }
-  function layoutFor(compact) {
+  // ---------- Views ----------
+  const VIEWS = {
+    whole:   { note: "One time scale from the birth of the Earth to today. Every centimetre is the same number of years." },
+    animals: { note: "The last 541 million years, since animals appeared, still at one time scale but zoomed in. Older events are hidden in this view." },
+    log:     { note: "A logarithmic scale: each big step to the right is ten times closer to today. Distances are not equal, but the recent past gets room to breathe." },
+    list:    { note: "Every event in time order, with its full story. The easiest view on a phone." },
+  };
+  let VIEW = "whole";
+  try { const v = localStorage.getItem("eet-view"); if (v && VIEWS[v]) VIEW = v; } catch (e) {}
+  const hiddenCauses = new Set();
+  const visibleEvent = e => e.causes.some(c => !hiddenCauses.has(c));
+
+  function layoutFor(compact, view) {
     const vw = window.innerWidth, vh = window.innerHeight;
     const L = compact
-      ? { scale: 1, cardW: Math.round(Math.min(280, Math.max(230, vw * 0.7))), chartH: 130, ribH: 16,
+      ? { pxPerMy: 9, cardW: Math.round(Math.min(280, Math.max(230, vw * 0.62))), chartH: 130, ribH: 16,
           height: Math.round(Math.min(860, Math.max(600, vh - 16))), padL: 24, font: 9.5,
           nowW: Math.max(290, Math.min(600, vw - 64)) }
-      : { scale: 1, cardW: 290, chartH: 180, ribH: 19,
+      : { pxPerMy: 6, cardW: 290, chartH: 180, ribH: 19,
           height: Math.round(Math.min(900, Math.max(680, vh - 40))), padL: 70, font: 10.5, nowW: 600 };
-    // Stack the bottom block (zoom label, ticks, ribbons, chart) up from the bottom edge
+    // Stack the bottom block (scale label, ticks, ribbons, chart) up from the bottom edge
+    L.tickFont = compact ? 13 : 15;
     L.zoomY = L.height - 12;
-    L.tickY = L.height - 46;
+    L.tickY = L.height - 60;
     L.rib2 = L.tickY - 12 - L.ribH;
     L.rib1 = L.rib2 - L.ribH - 1;
     L.chBot = L.rib1 - 8;
@@ -380,29 +485,36 @@
     L.cardTop = 10;
     L.cardBot = L.chTop - 34;
     L.compact = compact;
-    let acc = L.padL;
-    L.segments = BASE_SEGMENTS.map(s => {
-      const w = Math.round(s.width * L.scale);
-      const seg = { ...s, width: w, x0: acc, x1: acc + w };
-      acc += w;
-      return seg;
-    });
-    L.timelineEnd = acc;
+    L.view = view;
+    L.log = view === "log";
+    L.tFrom = view === "animals" ? 541 : START;
+    // Events younger than recentCut are listed after the graph (they would sit in its last pixels)
+    L.recentCut = L.log ? -1 : RECENT;
+    if (L.log) {
+      L.minYears = 5; L.maxYears = START * 1e6;
+      L.pxPerDec = compact ? 2400 : 1600;
+      L.width = Math.round((Math.log10(L.maxYears) - Math.log10(L.minYears)) * L.pxPerDec);
+    } else {
+      if (view === "animals") L.pxPerMy = compact ? 40 : 30;
+      L.width = Math.round(L.tFrom * L.pxPerMy);
+    }
+    L.timelineEnd = L.padL + L.width;
     return L;
   }
 
   let L = null; // current layout
   function x(t) {
-    for (const s of L.segments) {
-      if (t <= s.from && t >= s.to) return s.x0 + (s.from - t) / (s.from - s.to) * s.width;
+    if (t >= L.tFrom) return L.padL;
+    if (L.log) {
+      const yrs = Math.max(t * 1e6, L.minYears);
+      return L.padL + (Math.log10(L.maxYears) - Math.log10(yrs)) * L.pxPerDec;
     }
-    return t > L.segments[0].from ? L.padL : L.timelineEnd;
+    return L.padL + (L.tFrom - Math.max(0, t)) * L.pxPerMy;
   }
   function tAt(px) {
-    for (const s of L.segments) {
-      if (px >= s.x0 && px <= s.x1) return s.from - (px - s.x0) / s.width * (s.from - s.to);
-    }
-    return null;
+    if (px < L.padL || px > L.timelineEnd) return null;
+    if (L.log) return Math.pow(10, Math.log10(L.maxYears) - (px - L.padL) / L.pxPerDec) / 1e6;
+    return L.tFrom - (px - L.padL) / L.pxPerMy;
   }
   const yPct = p => L.chBot - p / MAXPCT * (L.chBot - L.chTop);
 
@@ -694,12 +806,12 @@
   const MONO = "IBM Plex Mono, ui-monospace, Menlo, monospace";
   const chipsHTML = causes => causes.map(c => `<span class="chip"><i class="dot" style="background:${CAUSES[c].color}"></i>${CAUSES[c].label}</span>`).join("");
 
-  let TOTAL_W = 0, NOW_X = 0, phanX0 = 0, phanX1 = 0;
+  let TOTAL_W = 0, NOW_X = 0, phanX0 = 0, phanX1 = 0, PLACED = [];
   let cross = null, crossDot = null;
 
   // ---------- Build everything for the current layout ----------
   function build() {
-    L = layoutFor(isCompact());
+    L = layoutFor(isCompact(), VIEW === "list" ? "whole" : VIEW);
     document.documentElement.classList.toggle("compact", L.compact);
     svg.replaceChildren();
     mmSvg.replaceChildren();
@@ -708,9 +820,24 @@
     tip.hidden = true;
 
     // Cards: build them first so we can measure their real height
-    const sorted = [...EVENTS].sort((a, b) => b.t - a.t);
+    const sorted = EVENTS.filter(e => visibleEvent(e) && e.t <= L.tFrom).sort((a, b) => b.t - a.t);
+    const firstRecent = sorted.findIndex(e => e.t < L.recentCut);
+    if (firstRecent >= 0) sorted.splice(firstRecent, 0, { isHead: true, t: RECENT });
     const areaH = L.cardBot - L.cardTop;
     for (const e of sorted) {
+      if (e.isHead) {
+        const d = document.createElement("div");
+        d.className = "card recent-head";
+        d.id = "recent";
+        d.style.width = L.cardW + "px";
+        d.innerHTML = `<span class="when"><span>AFTER THE GRAPH</span></span>
+          <span class="name">The last 300,000 years</span>
+          <span class="txt">Everything from the first <em>Homo sapiens</em> to today fits inside the last 2 pixels of the graph. That is how short human history is next to the age of the Earth.</span>
+          <span class="txt">So the extinctions of this period are listed here in time order, from oldest to newest. This list has no time scale.</span>`;
+        canvas.appendChild(d);
+        e.el = d; e.h = d.offsetHeight;
+        continue;
+      }
       const b = document.createElement("button");
       b.type = "button";
       b.className = "card" + (e.big ? " big" : "");
@@ -737,8 +864,11 @@
     let prevLeft = -Infinity;
     for (const e of sorted) {
       const ex = x(e.t);
-      // Centre the card on its date, but never before the previous card (keeps reading order)
-      let left = Math.max(L.padL - 14, ex - L.cardW / 2, prevLeft);
+      // Centre the card on its date, but never before the previous card (keeps reading order).
+      // Recent events and their header start after the end of the graph.
+      let left = e.t < L.recentCut || e.isHead
+        ? Math.max(prevLeft, L.timelineEnd + (L.compact ? 40 : 70))
+        : Math.max(L.padL - 14, ex - L.cardW / 2, prevLeft);
       for (let guard = 0; guard < 4000; guard++) {
         const over = placed.filter(r => r.left < left + L.cardW + GAP && r.left + r.w + GAP > left);
         const tops = [L.cardTop, ...over.map(r => r.top + r.h + GAP)].sort((a, b) => a - b);
@@ -752,7 +882,8 @@
       e.el.style.left = e.left + "px";
       e.el.style.top = e.top + "px";
     }
-    const laneEnd = placed.map(r => r.left + r.w);
+    const laneEnd = placed.map(r => r.left + r.w).concat([L.timelineEnd]);
+    PLACED = sorted.filter(e => !e.isHead);
     NOW_X = Math.max(L.timelineEnd + (L.compact ? 60 : 120), Math.max(...laneEnd) + 40);
     TOTAL_W = NOW_X + L.nowW + (L.compact ? 24 : 60);
     phanX0 = x(541); phanX1 = x(2.58);
@@ -771,6 +902,7 @@
     const unmeasured = [[L.padL, phanX0, "Too early to count", "Life was mostly microscopic. Events shown, no percentage."],
                         [phanX1, L.timelineEnd, "Counted species by species", "Here we know single species, not fossil percentages."]];
     for (const [a, b, t1, t2] of unmeasured) {
+      if (b - a < 2) continue;
       el("rect", { x: a, y: L.chTop, width: b - a, height: L.chBot - L.chTop, fill: "url(#hatch)" });
       const step = L.compact ? 700 : 1400;
       for (let cx = a + 24; cx < b - 280; cx += step) {
@@ -809,17 +941,17 @@
       }
     }
 
-    // Zoom markers: say in plain words how much time one screen covers from here on
+    // Scale reminder: the same everywhere, repeated so one is always close by
     const screenW = Math.max(300, fresco.clientWidth || window.innerWidth);
-    L.segments.forEach((s, i) => {
-      const span = fmtSpan((s.from - s.to) * 1e6 / s.width * screenW);
-      const label = (i === 0 ? "ONE SCREEN ≈ " : "ZOOMING IN · ONE SCREEN NOW ≈ ") + span.toUpperCase();
-      const w = label.length * L.font * 0.62 + 20;
-      if (i > 0) el("line", { x1: s.x0, x2: s.x0, y1: L.chTop, y2: L.rib2 + L.ribH, stroke: "#4a5a70", "stroke-width": 1 });
-      const gx = s.x0 + (i === 0 ? 8 : 0);
-      el("rect", { x: gx, y: L.chTop + 4, width: w, height: L.font + 11, rx: (L.font + 11) / 2, fill: "#0d131c", stroke: "#4a5a70", "stroke-width": 1 });
-      text(label, { x: gx + 10, y: L.chTop + 4 + L.font + 4, fill: "#e8d9b8", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.04em" });
-    });
+    const scaleLabel = L.log
+      ? "LOG SCALE · EACH BIG TICK IS 10× CLOSER TO TODAY"
+      : "SAME SCALE THROUGHOUT · ONE SCREEN ≈ " + fmtSpan(screenW / L.pxPerMy * 1e6).toUpperCase();
+    const pillW = scaleLabel.length * L.font * 0.62 + 20;
+    for (let gx = L.padL + 8; gx < L.timelineEnd - pillW; gx += screenW * 4) {
+      const py = L.height - L.font - 19;
+      el("rect", { x: gx, y: py, width: pillW, height: L.font + 11, rx: (L.font + 11) / 2, fill: "#0d131c", stroke: "#4a5a70", "stroke-width": 1 });
+      text(scaleLabel, { x: gx + 10, y: py + L.font + 4, fill: "#e8d9b8", "font-family": MONO, "font-size": L.font, "letter-spacing": "0.04em" });
+    }
 
     // Ribbons
     const charW = L.font * 0.69;
@@ -839,29 +971,42 @@
     ribbon(EONS, L.rib1);
     ribbon(PERIODS, L.rib2);
 
-    // Ticks
+    // Ticks: big, written-out labels
     const TICKS = [];
-    for (let t = 4500; t >= 1000; t -= 500) TICKS.push([t, (t / 1000) + " bn"]);
-    TICKS.push([541, "541 My"]);
-    for (let t = 500; t >= 50; t -= 50) TICKS.push([t, t + " My"]);
-    TICKS.push([25, "25 My"], [2.58, "2.6 My"]);
-    TICKS.push([2, "2 My"], [1, "1 My"], [0.5, "500,000"]);
-    for (const k of [100, 75, 50, 25]) TICKS.push([k / 1000, k + ",000"]);
-    TICKS.push([0.0117, "11,700"]);
-    for (const k of [10, 8, 6, 4, 2]) TICKS.push([k / 1000, k + ",000"]);
-    for (let yr = 1500; yr <= 1900; yr += 50) TICKS.push([yearCE(yr), yr + " CE"]);
-    for (let yr = 1920; yr <= 2020; yr += 20) TICKS.push([yearCE(yr), String(yr)]);
-    TICKS.push([0, "2026"]);
-    for (const [t, lbl] of TICKS) {
+    if (L.log) {
+      const names = ["1 year", "10 years", "100 years", "1,000 years", "10,000 years", "100,000 years",
+                     "1 million years", "10 million years", "100 million years", "1 billion years"];
+      for (let k = 1; k <= 9; k++) {
+        TICKS.push([Math.pow(10, k) / 1e6, names[k] + " ago", true]);
+        for (let m = 2; m <= 9; m++) { const t = m * Math.pow(10, k) / 1e6; if (t < L.tFrom && k < 9) TICKS.push([t, "", false]); }
+      }
+    } else {
+      const step = L.view === "animals" ? 10 : 100;
+      const every = L.view === "animals" ? 20 : 100;
+      for (let t = Math.floor((L.tFrom - 1) / step) * step; t >= step; t -= step) {
+        TICKS.push([t, t % every === 0 ? fmtTick(t) : "", t % every === 0]);
+      }
+    }
+    TICKS.push([0, "Today", true]);
+    for (const [t, lbl, major] of TICKS) {
       const xx = x(t);
-      el("line", { x1: xx, x2: xx, y1: L.tickY - 6, y2: L.tickY, stroke: "#4a5a70" });
-      text(lbl, { x: xx, y: L.tickY + 13, fill: "#b3b9c3", "font-family": MONO, "font-size": L.font, "text-anchor": "middle" });
+      el("line", { x1: xx, x2: xx, y1: L.tickY - (major ? 10 : 5), y2: L.tickY, stroke: major ? "#8a96a8" : "#4a5a70", "stroke-width": major ? 1.5 : 1 });
+      if (lbl) text(lbl, { x: xx, y: L.tickY + L.tickFont + 6, fill: "#ece7dc", "font-family": MONO, "font-size": L.tickFont, "font-weight": 600,
+        "text-anchor": t === 0 ? "end" : "middle" });
     }
 
     // Leader lines from each card down to its moment on the chart
     const leaders = el("g", {});
     const midY = (L.chTop + L.chBot) / 2;
     sorted.forEach(e => {
+      if (e.isHead) {
+        const lx = e.left + 10, bottom = e.top + e.h;
+        el("path", { d: `M${lx} ${bottom} L${lx} ${bottom + 6} L${L.timelineEnd} ${L.chTop - 8} L${L.timelineEnd} ${midY - 10}`,
+          fill: "none", stroke: "#d55181", "stroke-width": 1.2 }, leaders);
+        el("circle", { cx: L.timelineEnd, cy: midY - 10, r: 5, fill: "#d55181", stroke: "#131a24", "stroke-width": 2 }, leaders);
+        return;
+      }
+      if (e.t < L.recentCut) return;
       const ex = x(e.t);
       const col = CAUSES[e.causes[0]].color;
       const si = peakStage(e);
@@ -888,7 +1033,13 @@
     now.className = "now";
     now.style.left = NOW_X + "px";
     now.style.width = L.nowW + "px";
-    now.innerHTML = `
+    now.innerHTML = nowHTML();
+    canvas.appendChild(now);
+    el("line", { x1: L.timelineEnd, x2: NOW_X, y1: midY, y2: midY, stroke: "#d55181", "stroke-opacity": 0.5 });
+    afterNow();
+  }
+  function nowHTML() {
+    return `
       <div class="eyebrow">TODAY · 2026</div>
       <h2>Species in danger now</h2>
       <p>Scientists debate whether we are entering a sixth mass extinction. The Big Five each killed about three-quarters of all species. We are far from that total, but the speed is alarming: vertebrates are now vanishing up to 100 times faster than the natural background rate.</p>
@@ -901,8 +1052,8 @@
       <div class="bars">${GROUPS.map(([g, v]) => `<span class="lbl">${g}</span><span class="track" title="${g}: ${v}% threatened"><span class="fill" style="width:${v}%"></span></span><span class="val">${v}%</span>`).join("")}</div>
       <p style="margin-top:12px">The main causes today: habitat loss (farming, logging, cities), overhunting and overfishing, invasive species, pollution, and climate change. Unlike the asteroid, these are choices, and every one of them can be slowed.</p>
       <div class="src">Sources: IUCN Red List 2024; IPBES Global Assessment 2019; Ceballos et al., Science Advances 2015. Figures rounded.</div>`;
-    canvas.appendChild(now);
-    el("line", { x1: L.timelineEnd, x2: NOW_X, y1: midY, y2: midY, stroke: "#d55181", "stroke-opacity": 0.5 });
+  }
+  function afterNow() {
 
     // Hover / tap on the curve
     cross = el("rect", { fill: "none", stroke: "#ffffff", "stroke-width": 1.5, visibility: "hidden" });
@@ -918,6 +1069,44 @@
     yaxis.innerHTML = [10, 20, 30, 40, 50, 60].map(p => `<span style="top:${yPct(p) - L.chTop}px">${p}%</span>`).join("");
 
     buildMinimap();
+  }
+
+  // ---------- List view ----------
+  const listview = document.getElementById("listview");
+  function buildList() {
+    const groups = [
+      ["Hadean & Archean", "4.6 to 2.5 billion years ago · the young Earth and the first microbes", 4600, 2500],
+      ["Proterozoic", "2.5 billion to 541 million years ago · oxygen, ice and the first complex cells", 2500, 541],
+      ["Paleozoic", "541 to 252 million years ago · animals fill the seas and move onto land", 541, 251.8],
+      ["Mesozoic", "252 to 66 million years ago · the age of dinosaurs", 251.8, 65.9],
+      ["Cenozoic", "66 million to 300,000 years ago · mammals and birds take over", 65.9, 0.3],
+      ["The human era", "The last 300,000 years", 0.3, -1],
+    ];
+    const evs = EVENTS.filter(visibleEvent).sort((a, b) => b.t - a.t);
+    let html = "";
+    for (const [name, sub, a, b] of groups) {
+      const items = evs.filter(e => e.t <= a && e.t > b);
+      if (!items.length) continue;
+      html += `<h2>${name}<small>${sub}</small></h2>`;
+      for (const e of items) {
+        const ps = peakStage(e);
+        const pct = ps > 0 ? SERIES[ps][1] : null;
+        html += `<article class="lv-item${e.big ? " big" : ""}" style="--cause:${CAUSES[e.causes[0]].color}" data-t="${e.t}">
+          <div class="lv-when">${e.when}${e.big ? `<small>BIG FIVE #${e.big}</small>` : ""}</div>
+          <div class="lv-body">
+            <h3>${e.name}</h3>
+            ${e.loss ? `<div class="loss">${e.loss}</div>` : ""}
+            ${pct ? `<div class="lv-meter" title="About ${pct}% of sea-animal groups lost"><i style="width:${Math.min(100, pct / 60 * 100)}%"></i></div>` : ""}
+            <p><b>What disappeared</b>${e.lost}</p>
+            <p><b>Why</b>${e.why}</p>
+            ${e.after ? `<p><b>What came after</b>${e.after}</p>` : ""}
+            <div class="chips">${chipsHTML(e.causes)}</div>
+          </div>
+        </article>`;
+      }
+    }
+    html += `<section class="now">${nowHTML()}</section>`;
+    listview.innerHTML = html;
   }
 
   function showTip(ev) {
@@ -974,6 +1163,24 @@
     // Show the % labels only while the measured part of the curve is on screen
     const a = fresco.scrollLeft, b = a + fresco.clientWidth;
     yaxis.hidden = !(b > phanX0 + 40 && a < phanX1 - 40);
+    updateHere();
+  }
+  const hereT = document.getElementById("here-t"), hereP = document.getElementById("here-p");
+  function updateHere() {
+    if (VIEW === "list" || !L) return;
+    const c = fresco.scrollLeft + fresco.clientWidth / 2;
+    let t1, t2;
+    if (c > NOW_X - 40) { t1 = "Today"; t2 = "Species in danger"; }
+    else if (c > L.timelineEnd + 10) { t1 = "The last 300,000 years"; t2 = "Listed after the graph"; }
+    else {
+      const t = tAt(Math.max(L.padL, c));
+      if (t === null) return;
+      t1 = t > 0.0003 ? fmtAge(t >= 10 ? Math.round(t) : t >= 1 ? Math.round(t * 10) / 10 : t) : "Today";
+      const per = PERIODS.find(([, a, b]) => t <= a && t > b);
+      t2 = per ? per[0] : "";
+    }
+    if (hereT.textContent !== t1) hereT.textContent = t1;
+    if (hereP.textContent !== t2) hereP.textContent = t2;
   }
 
   // ---------- Scrolling, dragging, keyboard ----------
@@ -1007,7 +1214,15 @@
   const smooth = () => matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   document.querySelectorAll("[data-jump]").forEach(b => b.addEventListener("click", () => {
     const v = b.dataset.jump;
-    if (v === "now") { fresco.scrollTo({ left: TOTAL_W, behavior: smooth() }); return; }
+    if (VIEW !== "list" && v === "now") { fresco.scrollTo({ left: TOTAL_W, behavior: smooth() }); return; }
+    if (VIEW === "list") {
+      const target = v === "now" ? listview.querySelector(".now")
+        : [...listview.querySelectorAll(".lv-item")].find(n => parseFloat(n.dataset.t) <= (v === "recent" ? 0.3 : parseFloat(v)));
+      if (target) target.scrollIntoView({ behavior: smooth(), block: "start" });
+      return;
+    }
+    const rec = document.getElementById("recent");
+    if (v === "recent") { fresco.scrollTo({ left: rec ? rec.offsetLeft - 16 : x(0.3) - fresco.clientWidth * 0.15, behavior: smooth() }); return; }
     fresco.scrollTo({ left: Math.max(0, x(parseFloat(v)) - fresco.clientWidth * (L.compact ? 0.15 : 0.3)), behavior: smooth() });
   }));
 
@@ -1027,7 +1242,7 @@
 
   // Rebuild when the layout mode changes (e.g. rotating a phone), keeping the same moment in view
   let lastKey = "";
-  const layoutKey = () => isCompact() + ":" + window.innerWidth;
+  const layoutKey = () => isCompact() + ":" + window.innerWidth + ":" + VIEW + ":" + [...hiddenCauses].sort().join(",");
   function relayout() {
     const key = layoutKey();
     if (key === lastKey) { sync(); return; }
@@ -1035,11 +1250,59 @@
     const atEnd = hadLayout && fresco.scrollLeft + fresco.clientWidth >= L.timelineEnd;
     const centerT = hadLayout ? tAt(fresco.scrollLeft + fresco.clientWidth / 2) : null;
     lastKey = key;
+    applyViewChrome();
+    if (VIEW === "list") { buildList(); return; }
     build();
     if (atEnd) fresco.scrollLeft = TOTAL_W;
     else if (centerT !== null) fresco.scrollLeft = x(centerT) - fresco.clientWidth / 2;
     sync();
   }
+  // ---------- View switcher, filters, previous / next ----------
+  const viewBtns = [...document.querySelectorAll("[data-view]")];
+  function applyViewChrome() {
+    document.documentElement.classList.toggle("is-list", VIEW === "list");
+    viewBtns.forEach(b => b.setAttribute("aria-selected", String(b.dataset.view === VIEW)));
+    document.getElementById("view-note").textContent = VIEWS[VIEW].note;
+    document.querySelectorAll("[data-precambrian]").forEach(b => { b.hidden = VIEW === "animals"; });
+    const left = { whole: "4.6 billion years ago", animals: "541 million years ago", log: "4.6 billion years ago" }[VIEW] || "";
+    document.getElementById("mm-left").textContent = left;
+    document.getElementById("mm-mid").textContent = { whole: "The whole graph at the same scale", animals: "The age of animals at the same scale", log: "Log scale: each step 10× closer to today" }[VIEW] || "";
+  }
+  function setView(v) {
+    if (v === VIEW) return;
+    const keepT = L && VIEW !== "list" ? tAt(fresco.scrollLeft + fresco.clientWidth / 2) : null;
+    VIEW = v;
+    try { localStorage.setItem("eet-view", v); } catch (e) {}
+    relayout();
+    if (VIEW !== "list" && keepT !== null && keepT <= L.tFrom) fresco.scrollLeft = x(keepT) - fresco.clientWidth / 2;
+    else if (VIEW !== "list" && keepT !== null) fresco.scrollLeft = 0;
+    sync && VIEW !== "list" && sync();
+  }
+  viewBtns.forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
+  document.querySelector(".views").addEventListener("keydown", ev => {
+    const i = viewBtns.findIndex(b => b.dataset.view === VIEW);
+    const d = ev.key === "ArrowRight" ? 1 : ev.key === "ArrowLeft" ? -1 : 0;
+    if (!d) return;
+    const nb = viewBtns[(i + d + viewBtns.length) % viewBtns.length];
+    setView(nb.dataset.view); nb.focus(); ev.preventDefault();
+  });
+  document.querySelectorAll("[data-cause]").forEach(b => b.addEventListener("click", () => {
+    const c = b.dataset.cause;
+    if (hiddenCauses.has(c)) hiddenCauses.delete(c); else hiddenCauses.add(c);
+    b.setAttribute("aria-pressed", String(!hiddenCauses.has(c)));
+    const keepT = L && VIEW !== "list" ? tAt(fresco.scrollLeft + fresco.clientWidth / 2) : null;
+    relayout();
+    if (VIEW !== "list" && keepT !== null) fresco.scrollLeft = x(keepT) - fresco.clientWidth / 2;
+  }));
+  function stepEvent(dir) {
+    const lefts = PLACED.map(e => e.left).concat(document.getElementById("recent") ? [document.getElementById("recent").offsetLeft] : []).concat([NOW_X]).sort((a, b) => a - b);
+    const cur = fresco.scrollLeft + 16;
+    const target = dir > 0 ? lefts.find(l => l > cur + 4) : [...lefts].reverse().find(l => l < cur - 4);
+    if (target !== undefined) fresco.scrollTo({ left: Math.max(0, target - 16), behavior: smooth() });
+  }
+  document.getElementById("prev").addEventListener("click", () => stepEvent(-1));
+  document.getElementById("next").addEventListener("click", () => stepEvent(1));
+
   let rt = null;
   window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(relayout, 150); });
   relayout();
